@@ -31,7 +31,7 @@ public class EmpresaService {
         Empresa empresa = new Empresa();
         empresa.setNombre(dto.getNombre());
         empresa.setNit(dto.getNit());
-        empresa.setCorreoContacto(dto.getCorreoContacto());
+        //empresa.setCorreoContacto(dto.getCorreoContacto());
         empresa.setUsuarios(new ArrayList<>());
 
         empresa = empresaRepository.save(empresa);

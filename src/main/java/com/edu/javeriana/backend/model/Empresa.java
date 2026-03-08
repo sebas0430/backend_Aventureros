@@ -1,11 +1,13 @@
 package com.edu.javeriana.backend.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
+
+import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
 @Table(name = "empresa")
@@ -28,11 +30,13 @@ public class Empresa {
     @Column(unique = true, nullable = false)
     private String nit;
 
-    @Email(message = "Debe ser un correo válido")
-    @NotBlank(message = "El correo de contacto es obligatorio")
-    @Column(name = "correo_contacto", nullable = false)
-    private String correoContacto;
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Usuario> usuarios;
+
+    @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Proceso> procesos;
 }
