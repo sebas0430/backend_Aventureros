@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Mostrar rama actual
-        run: echo "Rama actual: ${{ github.ref }}"
+        run: echo main
 
       - name: Checkout code
         uses: actions/checkout@v3
