@@ -26,8 +26,8 @@ public class UsuarioController {
 
             Map<String, Object> response = new HashMap<>();
             response.put("id", nuevoUsuario.getId());
-            response.put("correo", nuevoUsuario.getCorreo());
-            response.put("rolGlobal", nuevoUsuario.getRolGlobal());
+            response.put("username", nuevoUsuario.getUsername());
+            response.put("rol", nuevoUsuario.getRol());
             response.put("mensaje", "Usuario registrado exitosamente en la empresa");
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);

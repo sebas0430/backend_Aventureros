@@ -2,7 +2,6 @@ package com.edu.javeriana.backend.service;
 
 import com.edu.javeriana.backend.dto.EmpresaRegistroDTO;
 import com.edu.javeriana.backend.model.Empresa;
-import com.edu.javeriana.backend.model.RolGlobal;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.EmpresaRepository;
 import com.edu.javeriana.backend.repository.UsuarioRepository;
@@ -24,8 +23,8 @@ public class EmpresaService {
         if (empresaRepository.findByNit(dto.getNit()).isPresent()) {
             throw new IllegalArgumentException("Ya existe una empresa con ese NIT");
         }
-        if (usuarioRepository.findByCorreo(dto.getCorreoContacto()).isPresent()) {
-            throw new IllegalArgumentException("Ya existe un usuario con este correo electrónico");
+        if (usuarioRepository.findByUsername(dto.getCorreoContacto()).isPresent()) {
+            throw new IllegalArgumentException("Ya existe un usuario con este username");
         }
 
         Empresa empresa = new Empresa();
@@ -37,10 +36,11 @@ public class EmpresaService {
         empresa = empresaRepository.save(empresa);
 
         Usuario admin = new Usuario();
-        admin.setCorreo(dto.getCorreoContacto());
+        admin.setUsername(dto.getCorreoContacto());
         // TODO: Encriptar contraseña en futuros sprints (Spring Security)
-        admin.setPassword(dto.getPasswordAdmin());
-        admin.setRolGlobal(RolGlobal.ADMINISTRADOR_EMPRESA);
+        admin.setPasswordHash(dto.getPasswordAdmin());
+        admin.setRol("ADMINISTRADOR_EMPRESA");
+        admin.setActivo(true);
         admin.setEmpresa(empresa);
 
         usuarioRepository.save(admin);
