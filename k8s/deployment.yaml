@@ -17,7 +17,7 @@ spec:
       - name: ghcr-secret
       containers:
       - name: <nombredelapp>
-        image: ghcr.io/<dueniorepo>/<nombredelrepo>:latest
+        image: ghcr.io/<dueniorepo>/backend_aventureros:latest
         ports:
         - containerPort: 8080
 ---
