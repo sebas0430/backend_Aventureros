@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: <nombredelapp>
+  namespace: <nombredelnamespace>
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: <nombredelapp>
+  template:
+    metadata:
+      labels:
+        app: <nombredelapp>
+    spec:
+      imagePullSecrets:
+      - name: ghcr-secret
+      containers:
+      - name: <nombredelapp>
+        image: ghcr.io/<dueniorepo>/<nombredelrepo>:latest
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: <nombredelapp>
+  namespace: <nombredelnamespace>
+spec:
+  selector:
+    app: <nombredelapp>
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+   name: <nombredelapp>
+   namespace: <nombredelnamespace>
+spec:
+   ingressClassName: public
+   rules:
+   - host: <grupo>.inphotech.co
+     http:
+       paths:
+       - path: /
+         pathType: Prefix
+         backend:
+           service:
+             name: <nombredelapp>
+             port:
+               number: 8080
