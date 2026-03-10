@@ -1,0 +1,25 @@
+# Carpeta de build local (se regenera en Docker)
+target/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.idea/
+*.iml
+*.iws
+.vscode/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Logs
+*.log
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
