@@ -37,7 +37,8 @@ jobs:
         run: docker push ghcr.io/sebas0430/backend_aventureros:latest
 
       - name: Print pushed image URL
-        run: echo "Imagen publicada: ghcr.io/sebas0430/backend_aventureros:latest"
+        run: |
+          echo "Imagen publicada: ghcr.io/sebas0430/backend_aventureros:latest"
 
   deploy-onpremise:
     name: Deploy on MicroK8s On-Premise
@@ -52,4 +53,4 @@ jobs:
         run: sudo microk8s kubectl apply -f k8s/deployment.yaml
 
       - name: Restart Kubernetes deployment
-        run: sudo microk8s kubectl rollout restart deployment/<nombredeployment> -n <nombrenamespace>
+        run: sudo microk8s kubectl rollout restart deployment/backend-aventureros -n grupo13

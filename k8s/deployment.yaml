@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: <nombredelapp>
-  namespace: <nombredelnamespace>
+  name: backend-aventureros
+  namespace: grupo13
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: <nombredelapp>
+      app: backend-aventureros
   template:
     metadata:
       labels:
-        app: <nombredelapp>
+        app: backend-aventureros
     spec:
       imagePullSecrets:
       - name: ghcr-secret
       containers:
-      - name: <nombredelapp>
+      - name: backend-aventureros
         image: ghcr.io/sebas0430/backend_aventureros:latest
         ports:
         - containerPort: 8080
@@ -24,11 +24,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: <nombredelapp>
-  namespace: <nombredelnamespace>
+  name: backend-aventureros
+  namespace: grupo13
 spec:
   selector:
-    app: <nombredelapp>
+    app: backend-aventureros
   ports:
     - protocol: TCP
       port: 8080
@@ -37,18 +37,18 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-   name: <nombredelapp>
-   namespace: <nombredelnamespace>
+   name: backend-aventureros
+   namespace: grupo13
 spec:
    ingressClassName: public
    rules:
-   - host: <grupo>.inphotech.co
+   - host: grupo13.inphotech.co
      http:
        paths:
        - path: /
          pathType: Prefix
          backend:
            service:
-             name: <nombredelapp>
+             name: backend-aventureros
              port:
                number: 8080
