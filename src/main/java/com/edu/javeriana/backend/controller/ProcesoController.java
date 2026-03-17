@@ -63,6 +63,27 @@ public class ProcesoController {
         }
     }
 
+    // PUT /api/procesos/{id}
+    @PutMapping("/{id}")
+    public ResponseEntity<?> editarProceso(
+            @PathVariable Long id,
+            @Valid @RequestBody com.edu.javeriana.backend.dto.ProcesoEdicionDTO dto) {
+        try {
+            Proceso actualizado = procesoService.editarProceso(id, dto);
+            return ResponseEntity.ok(Map.of(
+                    "id", actualizado.getId(),
+                    "nombre", actualizado.getNombre(),
+                    "descripcion", actualizado.getDescripcion(),
+                    "categoria", actualizado.getCategoria(),
+                    "updatedAt", actualizado.getUpdatedAt(),
+                    "mensaje", "Proceso editado exitosamente"));
+        } catch (com.edu.javeriana.backend.exception.BusinessRuleException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (com.edu.javeriana.backend.exception.ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
     // DELETE /api/procesos/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminarProceso(@PathVariable Long id) {

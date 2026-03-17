@@ -21,6 +21,8 @@ public class ProcesoService implements IProcesoService {
     private final EmpresaRepository empresaRepository;
     private final UsuarioRepository usuarioRepository;
 
+    private final com.edu.javeriana.backend.repository.HistorialProcesoRepository historialProcesoRepository;
+
     @Transactional
     public Proceso crearProceso(ProcesoRegistroDTO dto) {
 
@@ -61,6 +63,58 @@ public class ProcesoService implements IProcesoService {
 
         proceso.setDefinicionJson(definicionJson);
         return procesoRepository.save(proceso);
+    }
+
+    @Transactional
+    public Proceso editarProceso(Long id, com.edu.javeriana.backend.dto.ProcesoEdicionDTO dto) {
+        Proceso proceso = procesoRepository.findById(id)
+                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException(
+                        "Proceso no encontrado"));
+
+        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
+                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException(
+                        "Usuario no encontrado"));
+
+        // Validar permisos: solo el autor o un administrador pueden editar
+        boolean esAutor = proceso.getAutor().getId().equals(usuario.getId());
+        boolean esAdmin = "ADMINISTRADOR_EMPRESA".equals(usuario.getRol());
+
+        if (!esAutor && !esAdmin) {
+            throw new com.edu.javeriana.backend.exception.BusinessRuleException(
+                    "No tienes permisos para editar este proceso. Solo el autor o un administrador pueden hacerlo.");
+        }
+
+        StringBuilder cambios = new StringBuilder();
+        if (!proceso.getNombre().equals(dto.getNombre())) {
+            cambios.append("Nombre cambiado de '").append(proceso.getNombre()).append("' a '").append(dto.getNombre())
+                    .append("'. ");
+            proceso.setNombre(dto.getNombre());
+        }
+        if (!proceso.getDescripcion().equals(dto.getDescripcion())) {
+            cambios.append("Descripción actualizada. ");
+            proceso.setDescripcion(dto.getDescripcion());
+        }
+        if (!proceso.getCategoria().equals(dto.getCategoria())) {
+            cambios.append("Categoría cambiada de '").append(proceso.getCategoria()).append("' a '")
+                    .append(dto.getCategoria()).append("'. ");
+            proceso.setCategoria(dto.getCategoria());
+        }
+
+        if (cambios.length() > 0) {
+            proceso = procesoRepository.save(proceso);
+
+            com.edu.javeriana.backend.model.HistorialProceso historial = com.edu.javeriana.backend.model.HistorialProceso
+                    .builder()
+                    .proceso(proceso)
+                    .usuario(usuario)
+                    .accion("EDICION")
+                    .detalle(cambios.toString().trim())
+                    .build();
+
+            historialProcesoRepository.save(historial);
+        }
+
+        return proceso;
     }
 
     @Transactional
