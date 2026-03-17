@@ -12,6 +12,10 @@ public interface IProcesoService {
 
     List<Proceso> listarPorAutor(Long autorId);
 
+    Proceso obtenerProcesoPorId(Long id);
+
+    List<Proceso> filtrarProcesos(Long empresaId, String estado, String categoria);
+
     Proceso actualizarDefinicion(Long procesoId, String definicionJson);
 
     Proceso editarProceso(Long id, com.edu.javeriana.backend.dto.ProcesoEdicionDTO dto);

@@ -36,8 +36,28 @@ public class ProcesoController {
 
     // GET /api/procesos/empresa/{empresaId}
     @GetMapping("/empresa/{empresaId}")
-    public ResponseEntity<List<Proceso>> listarPorEmpresa(@PathVariable Long empresaId) {
-        return ResponseEntity.ok(procesoService.listarPorEmpresa(empresaId));
+    public ResponseEntity<?> listarPorEmpresa(
+            @PathVariable Long empresaId,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String categoria) {
+        try {
+            if (estado != null || categoria != null) {
+                return ResponseEntity.ok(procesoService.filtrarProcesos(empresaId, estado, categoria));
+            }
+            return ResponseEntity.ok(procesoService.listarPorEmpresa(empresaId));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // GET /api/procesos/{id}
+    @GetMapping("/{id}")
+    public ResponseEntity<?> obtenerProceso(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(procesoService.obtenerProcesoPorId(id));
+        } catch (com.edu.javeriana.backend.exception.ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     // GET /api/procesos/autor/{autorId}

@@ -56,6 +56,31 @@ public class ProcesoService implements IProcesoService {
         return procesoRepository.findByAutorId(autorId);
     }
 
+    @Transactional(readOnly = true)
+    public Proceso obtenerProcesoPorId(Long id) {
+        return procesoRepository.findById(id)
+                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException(
+                        "Proceso no encontrado"));
+    }
+
+    @Transactional(readOnly = true)
+    public List<Proceso> filtrarProcesos(Long empresaId, String estadoStr, String categoria) {
+        com.edu.javeriana.backend.model.EstadoProceso estado = null;
+        if (estadoStr != null && !estadoStr.isBlank()) {
+            try {
+                estado = com.edu.javeriana.backend.model.EstadoProceso.valueOf(estadoStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // If the state string is invalid, we could either throw exception or ignore.
+                // Let's throw.
+                throw new IllegalArgumentException("Estado no válido");
+            }
+        }
+
+        String categoriaQuery = (categoria != null && !categoria.isBlank()) ? categoria : null;
+
+        return procesoRepository.buscarConFiltros(empresaId, estado, categoriaQuery);
+    }
+
     @Transactional
     public Proceso actualizarDefinicion(Long procesoId, String definicionJson) {
         Proceso proceso = procesoRepository.findById(procesoId)
