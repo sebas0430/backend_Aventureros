@@ -5,9 +5,12 @@ import com.edu.javeriana.backend.dto.GatewayRegistroDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
 import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.model.Gateway;
+import com.edu.javeriana.backend.model.Arco;
 import com.edu.javeriana.backend.model.Proceso;
 import com.edu.javeriana.backend.model.TipoGateway;
+import com.edu.javeriana.backend.model.TipoNodo;
 import com.edu.javeriana.backend.model.Usuario;
+import com.edu.javeriana.backend.repository.ArcoRepository;
 import com.edu.javeriana.backend.repository.GatewayRepository;
 import com.edu.javeriana.backend.repository.ProcesoRepository;
 import com.edu.javeriana.backend.repository.UsuarioRepository;
@@ -24,6 +27,7 @@ public class GatewayService implements IGatewayService {
     private final GatewayRepository gatewayRepository;
     private final ProcesoRepository procesoRepository;
     private final UsuarioRepository usuarioRepository;
+    private final ArcoRepository arcoRepository;
 
     @Override
     @Transactional
@@ -74,6 +78,51 @@ public class GatewayService implements IGatewayService {
             throw new ResourceNotFoundException("Proceso no encontrado");
         }
         return gatewayRepository.findByProcesoId(procesoId);
+    }
+
+    @Override
+    @Transactional
+    public void eliminarGateway(Long id, Long usuarioId) {
+        // Validar que el usuario sea administrador
+        validarUsuarioAdministrador(usuarioId);
+
+        Gateway gateway = gatewayRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Gateway no encontrado"));
+
+        // Mantener el flujo consistente eliminando arcos asociados a este gateway
+        Long procesoId = gateway.getProceso().getId();
+        List<Arco> arcosOrigen = arcoRepository.findByProcesoIdAndOrigenIdAndOrigenTipo(procesoId, id, TipoNodo.GATEWAY);
+        List<Arco> arcosDestino = arcoRepository.findByProcesoIdAndDestinoIdAndDestinoTipo(procesoId, id, TipoNodo.GATEWAY);
+
+        arcoRepository.deleteAll(arcosOrigen);
+        arcoRepository.deleteAll(arcosDestino);
+
+        gatewayRepository.delete(gateway);
+    }
+
+    @Override
+    @Transactional
+    public void eliminarGatewaysPorProceso(Long procesoId, Long usuarioId) {
+        // Validar que el usuario sea administrador
+        validarUsuarioAdministrador(usuarioId);
+
+        if (!procesoRepository.existsById(procesoId)) {
+            throw new ResourceNotFoundException("Proceso no encontrado");
+        }
+        gatewayRepository.deleteByProcesoId(procesoId);
+    }
+
+    /**
+     * Valida que el usuario exista y tenga rol ADMINISTRADOR_EMPRESA.
+     */
+    private void validarUsuarioAdministrador(Long usuarioId) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol())) {
+            throw new BusinessRuleException(
+                    "Solo un administrador puede eliminar gateways");
+        }
     }
 
     /**

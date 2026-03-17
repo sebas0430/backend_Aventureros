@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface GatewayRepository extends JpaRepository<Gateway, Long> {
     List<Gateway> findByProcesoId(Long procesoId);
+
+    void deleteByProcesoId(Long procesoId);
 }

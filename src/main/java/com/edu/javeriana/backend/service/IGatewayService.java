@@ -13,4 +13,8 @@ public interface IGatewayService {
     Gateway editarGateway(Long id, GatewayEdicionDTO dto);
 
     List<Gateway> listarGatewaysPorProceso(Long procesoId);
+
+    void eliminarGateway(Long id, Long usuarioId);
+
+    void eliminarGatewaysPorProceso(Long procesoId, Long usuarioId);
 }

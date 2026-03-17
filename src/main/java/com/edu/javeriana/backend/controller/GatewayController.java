@@ -52,4 +52,18 @@ public class GatewayController {
     public ResponseEntity<List<Gateway>> listarGatewaysPorProceso(@PathVariable Long procesoId) {
         return ResponseEntity.ok(gatewayService.listarGatewaysPorProceso(procesoId));
     }
+
+    // DELETE /api/gateways/{id}?usuarioId=X — Eliminar un gateway (solo admin)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> eliminarGateway(@PathVariable Long id, @RequestParam Long usuarioId) {
+        gatewayService.eliminarGateway(id, usuarioId);
+        return ResponseEntity.ok(Map.of("mensaje", "Gateway eliminado exitosamente"));
+    }
+
+    // DELETE /api/gateways/proceso/{procesoId}?usuarioId=X — Eliminar todos los gateways de un proceso (solo admin)
+    @DeleteMapping("/proceso/{procesoId}")
+    public ResponseEntity<?> eliminarGatewaysPorProceso(@PathVariable Long procesoId, @RequestParam Long usuarioId) {
+        gatewayService.eliminarGatewaysPorProceso(procesoId, usuarioId);
+        return ResponseEntity.ok(Map.of("mensaje", "Todos los gateways del proceso fueron eliminados"));
+    }
 }
