@@ -58,4 +58,8 @@ public class Proceso {
     @JsonIgnore
     @OneToMany(mappedBy = "proceso", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Arco> arcos;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "proceso", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Gateway> gateways;
 }
