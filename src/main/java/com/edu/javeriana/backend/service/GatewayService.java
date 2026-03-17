@@ -1,5 +1,6 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.dto.GatewayEdicionDTO;
 import com.edu.javeriana.backend.dto.GatewayRegistroDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
 import com.edu.javeriana.backend.exception.ResourceNotFoundException;
@@ -44,6 +45,24 @@ public class GatewayService implements IGatewayService {
                 .tipo(tipoGateway)
                 .proceso(proceso)
                 .build();
+
+        return gatewayRepository.save(gateway);
+    }
+
+    @Override
+    @Transactional
+    public Gateway editarGateway(Long id, GatewayEdicionDTO dto) {
+        // 1. Buscar gateway existente
+        Gateway gateway = gatewayRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Gateway no encontrado"));
+
+        // 2. Validar permisos
+        validarUsuarioAutorizado(gateway.getProceso(), dto.getUsuarioId());
+
+        // 3. Modificar campos
+        TipoGateway tipoGateway = parseTipoGateway(dto.getTipo());
+        gateway.setNombre(dto.getNombre());
+        gateway.setTipo(tipoGateway);
 
         return gatewayRepository.save(gateway);
     }

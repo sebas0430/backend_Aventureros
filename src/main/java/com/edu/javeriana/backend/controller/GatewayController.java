@@ -1,5 +1,6 @@
 package com.edu.javeriana.backend.controller;
 
+import com.edu.javeriana.backend.dto.GatewayEdicionDTO;
 import com.edu.javeriana.backend.dto.GatewayRegistroDTO;
 import com.edu.javeriana.backend.model.Gateway;
 import com.edu.javeriana.backend.service.IGatewayService;
@@ -29,6 +30,20 @@ public class GatewayController {
                 "tipo", gateway.getTipo().name(),
                 "procesoId", gateway.getProceso().getId(),
                 "mensaje", "Gateway creado exitosamente"
+        ));
+    }
+
+    // PUT /api/gateways/{id} — Editar un gateway existente
+    @PutMapping("/{id}")
+    public ResponseEntity<?> editarGateway(@PathVariable Long id,
+                                           @Valid @RequestBody GatewayEdicionDTO dto) {
+        Gateway gateway = gatewayService.editarGateway(id, dto);
+        return ResponseEntity.ok(Map.of(
+                "id", gateway.getId(),
+                "nombre", gateway.getNombre(),
+                "tipo", gateway.getTipo().name(),
+                "procesoId", gateway.getProceso().getId(),
+                "mensaje", "Gateway editado exitosamente"
         ));
     }
 
