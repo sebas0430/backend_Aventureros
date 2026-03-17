@@ -66,4 +66,8 @@ public class Proceso {
     @JsonIgnore
     @OneToMany(mappedBy = "proceso", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Gateway> gateways;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "proceso", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProcesoCompartido> comparticiones;
 }

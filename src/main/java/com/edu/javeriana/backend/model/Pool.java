@@ -50,4 +50,8 @@ public class Pool {
     @JsonIgnore
     @OneToMany(mappedBy = "pool", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Lane> lanes;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "poolDestino", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProcesoCompartido> comparticionesRecibidas;
 }
