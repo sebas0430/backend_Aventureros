@@ -2,8 +2,10 @@ package com.edu.javeriana.backend.service;
 
 import com.edu.javeriana.backend.dto.EmpresaRegistroDTO;
 import com.edu.javeriana.backend.model.Empresa;
+import com.edu.javeriana.backend.model.Pool;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.EmpresaRepository;
+import com.edu.javeriana.backend.repository.PoolRepository;
 import com.edu.javeriana.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,7 @@ public class EmpresaService implements IEmpresaService {
 
     private final EmpresaRepository empresaRepository;
     private final UsuarioRepository usuarioRepository;
+    private final PoolRepository poolRepository;
 
     @Transactional
     public Empresa registrarEmpresa(EmpresaRegistroDTO dto) {
@@ -44,6 +47,14 @@ public class EmpresaService implements IEmpresaService {
         admin.setEmpresa(empresa);
 
         usuarioRepository.save(admin);
+
+        // Crear Pool por defecto para la empresa (HU-21)
+        Pool poolDefault = Pool.builder()
+                .nombre("Pool Principal - " + empresa.getNombre())
+                .descripcion("Área de procesos principal creada por defecto para la organización.")
+                .empresa(empresa)
+                .build();
+        poolRepository.save(poolDefault);
 
         return empresa;
     }

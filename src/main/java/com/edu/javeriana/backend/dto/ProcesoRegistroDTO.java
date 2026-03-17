@@ -21,4 +21,6 @@ public class ProcesoRegistroDTO {
 
     @NotNull(message = "El ID del autor es obligatorio")
     private Long autorId;
+
+    private Long poolId; // Opcional: Si no se manda, irá al pool por defecto de la empresa
 }

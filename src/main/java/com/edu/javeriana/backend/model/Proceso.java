@@ -48,6 +48,10 @@ public class Proceso {
     private Empresa empresa;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pool_id", nullable = true) // nullable para mantener feedback-compatibilidad.
+    private Pool pool;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "autor_id", nullable = false)
     private Usuario autor;
 

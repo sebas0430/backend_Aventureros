@@ -2,9 +2,11 @@ package com.edu.javeriana.backend.service;
 
 import com.edu.javeriana.backend.dto.ProcesoRegistroDTO;
 import com.edu.javeriana.backend.model.Empresa;
+import com.edu.javeriana.backend.model.Pool;
 import com.edu.javeriana.backend.model.Proceso;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.EmpresaRepository;
+import com.edu.javeriana.backend.repository.PoolRepository;
 import com.edu.javeriana.backend.repository.ProcesoRepository;
 import com.edu.javeriana.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ public class ProcesoService implements IProcesoService {
     private final ProcesoRepository procesoRepository;
     private final EmpresaRepository empresaRepository;
     private final UsuarioRepository usuarioRepository;
+    private final PoolRepository poolRepository;
 
     private final com.edu.javeriana.backend.repository.HistorialProcesoRepository historialProcesoRepository;
 
@@ -39,6 +42,21 @@ public class ProcesoService implements IProcesoService {
         proceso.setCategoria(dto.getCategoria());
         proceso.setEmpresa(empresa);
         proceso.setAutor(autor);
+
+        // HU-21: Asignar Pool
+        Pool poolAsignado;
+        if (dto.getPoolId() != null) {
+            poolAsignado = poolRepository.findById(dto.getPoolId())
+                    .orElseThrow(() -> new IllegalArgumentException("Pool no encontrado"));
+            if (!poolAsignado.getEmpresa().getId().equals(empresa.getId())) {
+                throw new IllegalArgumentException("El pool no pertenece a la misma empresa");
+            }
+        } else {
+            // Pool por defecto de esa empresa (el primero)
+            poolAsignado = poolRepository.findFirstByEmpresaIdOrderByIdAsc(empresa.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("La empresa no tiene ningún pool configurado"));
+        }
+        proceso.setPool(poolAsignado);
 
         // Nace explícitamente en estado BORRADOR
         proceso.setEstado(com.edu.javeriana.backend.model.EstadoProceso.BORRADOR);
