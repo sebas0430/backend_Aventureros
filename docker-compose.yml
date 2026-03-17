@@ -33,7 +33,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://jdbc:postgresql://190.146.2.119:2345/grupo13
+      SPRING_DATASOURCE_URL: jdbc:postgresql://jdbc:postgresql://190.146.2.119:2345/postgres
       SPRING_DATASOURCE_USERNAME: grupo13_user
       SPRING_DATASOURCE_PASSWORD: G13#tR6!Qw2$Lm9@Xp8V
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
