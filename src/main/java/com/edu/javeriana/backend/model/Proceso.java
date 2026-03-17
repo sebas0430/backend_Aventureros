@@ -69,5 +69,9 @@ public class Proceso {
 
     @JsonIgnore
     @OneToMany(mappedBy = "proceso", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProcesoCompartido> comparticiones;
+    private java.util.List<ProcesoCompartido> comparticiones;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "proceso", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<EventoMensaje> eventosMensaje;
 }
