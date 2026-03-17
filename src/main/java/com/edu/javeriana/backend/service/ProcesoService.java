@@ -24,6 +24,7 @@ public class ProcesoService implements IProcesoService {
     private final UsuarioRepository usuarioRepository;
     private final PoolRepository poolRepository;
     private final com.edu.javeriana.backend.repository.ProcesoCompartidoRepository procesoCompartidoRepository;
+    private final com.edu.javeriana.backend.repository.AsignacionRolPoolRepository asignacionRolPoolRepository;
 
     private final com.edu.javeriana.backend.repository.HistorialProcesoRepository historialProcesoRepository;
 
@@ -59,6 +60,8 @@ public class ProcesoService implements IProcesoService {
                     .orElseThrow(() -> new IllegalArgumentException("La empresa no tiene ningún pool configurado"));
         }
         proceso.setPool(poolAsignado);
+
+        validarPermisoDeRol(autor.getId(), poolAsignado.getId(), "CREAR");
 
         // Nace explícitamente en estado BORRADOR
         proceso.setEstado(com.edu.javeriana.backend.model.EstadoProceso.BORRADOR);
@@ -122,6 +125,8 @@ public class ProcesoService implements IProcesoService {
                 .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException(
                         "Proceso no encontrado"));
 
+        validarPermisoDeRol(dto.getUsuarioId(), proceso.getPool().getId(), "EDITAR");
+
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException(
                         "Usuario no encontrado"));
@@ -175,6 +180,8 @@ public class ProcesoService implements IProcesoService {
                 .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException(
                         "Proceso no encontrado"));
 
+        validarPermisoDeRol(usuarioId, proceso.getPool().getId(), "ELIMINAR");
+
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException(
                         "Usuario no encontrado"));
@@ -204,6 +211,12 @@ public class ProcesoService implements IProcesoService {
         Proceso proceso = procesoRepository.findById(procesoId)
                 .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException(
                         "Proceso no encontrado"));
+
+        if (nuevoEstado == com.edu.javeriana.backend.model.EstadoProceso.PUBLICADO) {
+            validarPermisoDeRol(usuarioId, proceso.getPool().getId(), "PUBLICAR");
+        } else {
+            validarPermisoDeRol(usuarioId, proceso.getPool().getId(), "EDITAR");
+        }
 
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException(
@@ -303,5 +316,34 @@ public class ProcesoService implements IProcesoService {
         return compartidos.stream()
                 .map(com.edu.javeriana.backend.model.ProcesoCompartido::getProceso)
                 .toList();
+    }
+
+    private void validarPermisoDeRol(Long usuarioId, Long poolId, String accion) {
+        Usuario solicitante = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException("Usuario no encontrado"));
+
+        if ("ADMINISTRADOR_EMPRESA".equals(solicitante.getRol())) {
+             return;
+        }
+
+        com.edu.javeriana.backend.model.AsignacionRolPool asignacion = asignacionRolPoolRepository.findByUsuarioIdAndPoolId(usuarioId, poolId)
+               .orElseThrow(() -> new com.edu.javeriana.backend.exception.BusinessRuleException("No cuentas con ningún rol asignado en este pool/departamento."));
+
+        com.edu.javeriana.backend.model.RolPool rol = asignacion.getRol();
+
+        switch (accion) {
+            case "CREAR" -> {
+                if (!rol.isPermisoCrearProceso()) throw new com.edu.javeriana.backend.exception.BusinessRuleException("Tu rol en este pool no permite CREAR procesos");
+            }
+            case "EDITAR" -> {
+                if (!rol.isPermisoEditarProceso()) throw new com.edu.javeriana.backend.exception.BusinessRuleException("Tu rol en este pool no permite EDITAR procesos");
+            }
+            case "ELIMINAR" -> {
+                if (!rol.isPermisoEliminarProceso()) throw new com.edu.javeriana.backend.exception.BusinessRuleException("Tu rol en este pool no permite ELIMINAR procesos");
+            }
+            case "PUBLICAR" -> {
+                if (!rol.isPermisoPublicarProceso()) throw new com.edu.javeriana.backend.exception.BusinessRuleException("Tu rol en este pool no permite PUBLICAR procesos");
+            }
+        }
     }
 }

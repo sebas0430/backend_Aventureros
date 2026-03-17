@@ -1,5 +1,6 @@
 package com.edu.javeriana.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -34,4 +35,8 @@ public class Usuario {
 
     @Column(nullable = false)
     private Boolean activo;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<AsignacionRolPool> rolesPool;
 }

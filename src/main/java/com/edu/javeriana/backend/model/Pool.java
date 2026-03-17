@@ -49,9 +49,17 @@ public class Pool {
 
     @JsonIgnore
     @OneToMany(mappedBy = "pool", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Lane> lanes;
+    private java.util.List<Lane> lanes;
 
     @JsonIgnore
     @OneToMany(mappedBy = "poolDestino", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProcesoCompartido> comparticionesRecibidas;
+    private java.util.List<ProcesoCompartido> comparticionesRecibidas;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "pool", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<RolPool> rolesConfigurados;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "pool", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<AsignacionRolPool> asignacionesRoles;
 }
