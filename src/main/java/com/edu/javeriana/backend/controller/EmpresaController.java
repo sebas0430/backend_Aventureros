@@ -2,7 +2,7 @@ package com.edu.javeriana.backend.controller;
 
 import com.edu.javeriana.backend.dto.EmpresaRegistroDTO;
 import com.edu.javeriana.backend.model.Empresa;
-import com.edu.javeriana.backend.service.EmpresaService;
+import com.edu.javeriana.backend.service.IEmpresaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,7 +17,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class EmpresaController {
 
-    private final EmpresaService empresaService;
+    private final IEmpresaService empresaService;
 
     @PostMapping
     public ResponseEntity<?> registrarEmpresa(@Valid @RequestBody EmpresaRegistroDTO dto) {

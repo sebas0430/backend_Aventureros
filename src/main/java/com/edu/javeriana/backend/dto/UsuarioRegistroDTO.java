@@ -7,8 +7,8 @@ import lombok.Data;
 @Data
 public class UsuarioRegistroDTO {
 
-    @NotBlank(message = "El username es obligatorio")
-    private String username;
+    @NotBlank(message = "El correo es obligatorio")
+    private String correo;
 
     @NotBlank(message = "La contraseña es obligatoria")
     private String passwordHash;

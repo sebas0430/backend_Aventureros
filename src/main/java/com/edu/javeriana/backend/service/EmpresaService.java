@@ -13,7 +13,7 @@ import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
-public class EmpresaService {
+public class EmpresaService implements IEmpresaService {
 
     private final EmpresaRepository empresaRepository;
     private final UsuarioRepository usuarioRepository;
@@ -35,9 +35,9 @@ public class EmpresaService {
 
         empresa = empresaRepository.save(empresa);
 
+        //Crear usuario administrador inicial de la empresa
         Usuario admin = new Usuario();
         admin.setUsername(dto.getCorreoContacto());
-        // TODO: Encriptar contraseña en futuros sprints (Spring Security)
         admin.setPasswordHash(dto.getPasswordAdmin());
         admin.setRol("ADMINISTRADOR_EMPRESA");
         admin.setActivo(true);
