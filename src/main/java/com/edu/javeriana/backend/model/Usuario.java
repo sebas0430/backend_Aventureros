@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "usuario")
 @Getter
@@ -34,4 +36,7 @@ public class Usuario {
 
     @Column(nullable = false)
     private Boolean activo;
+
+    @OneToMany(mappedBy = "autor", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Proceso> procesos;
 }
