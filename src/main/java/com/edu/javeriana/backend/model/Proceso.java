@@ -1,10 +1,13 @@
 package com.edu.javeriana.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
+
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "proceso")
@@ -51,4 +54,8 @@ public class Proceso {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "proceso", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Arco> arcos;
 }
