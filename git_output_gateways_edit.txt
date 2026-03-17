@@ -1,9 +1,0 @@
-﻿git : To https://github.com/sebas0430/backend_Aventureros.git
-En línea: 1 Carácter: 75
-+ ... n de gateways (HU-15)"; git push origin gestion_gateways 2>&1 | Out-F ...
-+                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : NotSpecified: (To https://gith...Aventureros.git: 
-   String) [], RemoteException
-    + FullyQualifiedErrorId : NativeCommandError
- 
-   9b1118b..ccb3d1f  gestion_gateways -> gestion_gateways
