@@ -2,7 +2,7 @@ package com.edu.javeriana.backend.controller;
 
 import com.edu.javeriana.backend.dto.ProcesoRegistroDTO;
 import com.edu.javeriana.backend.model.Proceso;
-import com.edu.javeriana.backend.service.ProcesoService;
+import com.edu.javeriana.backend.service.IProcesoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,7 +17,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ProcesoController {
 
-    private final ProcesoService procesoService;
+    private final IProcesoService procesoService;
 
     // POST /api/procesos
     @PostMapping
@@ -74,5 +74,24 @@ public class ProcesoController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    // PATCH /api/procesos/{id}/estado
+    @PatchMapping("/{id}/estado")
+    public ResponseEntity<?> cambiarEstado(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body) {
+        
+        com.edu.javeriana.backend.model.EstadoProceso nuevoEstado = 
+            com.edu.javeriana.backend.model.EstadoProceso.valueOf((String) body.get("estado"));
+        Long usuarioId = ((Number) body.get("usuarioId")).longValue();
+
+        Proceso actualizado = procesoService.cambiarEstado(id, nuevoEstado, usuarioId);
+
+        return ResponseEntity.ok(Map.of(
+                "id",        actualizado.getId(),
+                "estado",    actualizado.getEstado(),
+                "mensaje",   "Estado de proceso actualizado exitosamente"
+        ));
     }
 }

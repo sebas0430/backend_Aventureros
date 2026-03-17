@@ -23,6 +23,11 @@ public class Proceso {
     @Column(nullable = false)
     private String titulo;
 
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EstadoProceso estado = EstadoProceso.BORRADOR;
+
     @Lob
     @Column(name = "definicion_json", columnDefinition = "TEXT")
     private String definicionJson;

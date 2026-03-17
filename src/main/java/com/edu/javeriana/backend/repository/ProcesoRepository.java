@@ -17,4 +17,10 @@ public interface ProcesoRepository extends JpaRepository<Proceso, Long> {
 
     // Procesos de una empresa filtrados por autor
     List<Proceso> findByEmpresaIdAndAutorId(Long empresaId, Long autorId);
+
+    // Procesos filtrados por estado
+    List<Proceso> findByEstado(com.edu.javeriana.backend.model.EstadoProceso estado);
+
+    // Procesos de una empresa filtrados por estado+
+    List<Proceso> findByEmpresaIdAndEstado(Long empresaId, com.edu.javeriana.backend.model.EstadoProceso estado);
 }
