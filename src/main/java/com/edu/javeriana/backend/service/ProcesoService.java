@@ -26,6 +26,7 @@ public class ProcesoService implements IProcesoService {
 
     private final com.edu.javeriana.backend.repository.HistorialProcesoRepository historialProcesoRepository;
 
+    @Override
     @Transactional
     public Proceso crearProceso(ProcesoRegistroDTO dto) {
 
@@ -64,16 +65,19 @@ public class ProcesoService implements IProcesoService {
         return procesoRepository.save(proceso);
     }
 
+    @Override
     @Transactional(readOnly = true)
     public List<Proceso> listarPorEmpresa(Long empresaId) {
         return procesoRepository.findByEmpresaId(empresaId);
     }
 
+    @Override
     @Transactional(readOnly = true)
     public List<Proceso> listarPorAutor(Long autorId) {
         return procesoRepository.findByAutorId(autorId);
     }
 
+    @Override
     @Transactional(readOnly = true)
     public Proceso obtenerProcesoPorId(Long id) {
         return procesoRepository.findById(id)
@@ -81,6 +85,7 @@ public class ProcesoService implements IProcesoService {
                         "Proceso no encontrado"));
     }
 
+    @Override
     @Transactional(readOnly = true)
     public List<Proceso> filtrarProcesos(Long empresaId, String estadoStr, String categoria) {
         com.edu.javeriana.backend.model.EstadoProceso estado = null;
@@ -99,6 +104,7 @@ public class ProcesoService implements IProcesoService {
         return procesoRepository.buscarConFiltros(empresaId, estado, categoriaQuery);
     }
 
+    @Override
     @Transactional
     public Proceso actualizarDefinicion(Long procesoId, String definicionJson) {
         Proceso proceso = procesoRepository.findById(procesoId)
@@ -108,6 +114,7 @@ public class ProcesoService implements IProcesoService {
         return procesoRepository.save(proceso);
     }
 
+    @Override
     @Transactional
     public Proceso editarProceso(Long id, com.edu.javeriana.backend.dto.ProcesoEdicionDTO dto) {
         Proceso proceso = procesoRepository.findById(id)
@@ -160,6 +167,7 @@ public class ProcesoService implements IProcesoService {
         return proceso;
     }
 
+    @Override
     @Transactional
     public void eliminarProceso(Long procesoId, Long usuarioId) {
         Proceso proceso = procesoRepository.findById(procesoId)
@@ -188,6 +196,7 @@ public class ProcesoService implements IProcesoService {
         historialProcesoRepository.save(historial);
     }
 
+    @Override
     @Transactional
     public Proceso cambiarEstado(Long procesoId, com.edu.javeriana.backend.model.EstadoProceso nuevoEstado,
             Long usuarioId) {

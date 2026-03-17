@@ -21,6 +21,7 @@ public class EmpresaService implements IEmpresaService {
     private final UsuarioRepository usuarioRepository;
     private final PoolRepository poolRepository;
 
+    @Override
     @Transactional
     public Empresa registrarEmpresa(EmpresaRegistroDTO dto) {
         if (empresaRepository.findByNit(dto.getNit()).isPresent()) {

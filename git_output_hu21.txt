@@ -1,0 +1,20 @@
+﻿git : remote: 
+En línea: 1 Carácter: 83
++ ...  empresa)"; git push -u origin 
+historias_de_usuario_faltantes 2>&1 |  ...
++                 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (remote: :String) 
+    [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+remote: Create a pull request for 
+'historias_de_usuario_faltantes' on GitHub by visiting:       
+ 
+remote:      https://github.com/sebas0430/backend_Aventureros/
+pull/new/historias_de_usuario_faltantes        
+remote: 
+branch 'historias_de_usuario_faltantes' set up to track 'origin/historias_de_usuario_faltantes'.
+To https://github.com/sebas0430/backend_Aventureros.git
+ * [new branch]      historias_de_usuario_faltantes -> 
+historias_de_usuario_faltantes
