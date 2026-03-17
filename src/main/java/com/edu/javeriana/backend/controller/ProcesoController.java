@@ -86,12 +86,14 @@ public class ProcesoController {
 
     // DELETE /api/procesos/{id}
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminarProceso(@PathVariable Long id) {
+    public ResponseEntity<?> eliminarProceso(@PathVariable Long id, @RequestParam Long usuarioId) {
         try {
-            procesoService.eliminarProceso(id);
-            return ResponseEntity.ok(Map.of("mensaje", "Proceso eliminado exitosamente"));
-        } catch (IllegalArgumentException e) {
+            procesoService.eliminarProceso(id, usuarioId);
+            return ResponseEntity.ok(Map.of("mensaje", "Proceso invalidado/eliminado exitosamente"));
+        } catch (com.edu.javeriana.backend.exception.BusinessRuleException | IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (com.edu.javeriana.backend.exception.ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
 

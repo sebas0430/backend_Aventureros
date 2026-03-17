@@ -118,11 +118,31 @@ public class ProcesoService implements IProcesoService {
     }
 
     @Transactional
-    public void eliminarProceso(Long procesoId) {
-        if (!procesoRepository.existsById(procesoId)) {
-            throw new IllegalArgumentException("Proceso no encontrado");
+    public void eliminarProceso(Long procesoId, Long usuarioId) {
+        Proceso proceso = procesoRepository.findById(procesoId)
+                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException(
+                        "Proceso no encontrado"));
+
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException(
+                        "Usuario no encontrado"));
+
+        if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol())) {
+            throw new com.edu.javeriana.backend.exception.BusinessRuleException(
+                    "Solo un administrador puede eliminar procesos.");
         }
-        procesoRepository.deleteById(procesoId);
+
+        proceso.setEstado(com.edu.javeriana.backend.model.EstadoProceso.INACTIVO);
+        proceso = procesoRepository.save(proceso);
+
+        com.edu.javeriana.backend.model.HistorialProceso historial = com.edu.javeriana.backend.model.HistorialProceso
+                .builder()
+                .proceso(proceso)
+                .usuario(usuario)
+                .accion("ELIMINACION")
+                .detalle("El proceso fue eliminado (estado cambiado a INACTIVO).")
+                .build();
+        historialProcesoRepository.save(historial);
     }
 
     @Transactional

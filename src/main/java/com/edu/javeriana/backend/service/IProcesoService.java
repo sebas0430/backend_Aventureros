@@ -16,7 +16,7 @@ public interface IProcesoService {
 
     Proceso editarProceso(Long id, com.edu.javeriana.backend.dto.ProcesoEdicionDTO dto);
 
-    void eliminarProceso(Long procesoId);
+    void eliminarProceso(Long procesoId, Long usuarioId);
 
     Proceso cambiarEstado(Long procesoId, com.edu.javeriana.backend.model.EstadoProceso nuevoEstado, Long usuarioId);
 }
