@@ -25,11 +25,10 @@ public class ProcesoController {
         try {
             Proceso proceso = procesoService.crearProceso(dto);
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                    "id",        proceso.getId(),
-                    "titulo",    proceso.getTitulo(),
+                    "id", proceso.getId(),
+                    "nombre", proceso.getNombre(),
                     "updatedAt", proceso.getUpdatedAt(),
-                    "mensaje",   "Proceso creado exitosamente"
-            ));
+                    "mensaje", "Proceso creado exitosamente"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -56,10 +55,9 @@ public class ProcesoController {
             String definicionJson = body.get("definicionJson");
             Proceso actualizado = procesoService.actualizarDefinicion(id, definicionJson);
             return ResponseEntity.ok(Map.of(
-                    "id",          actualizado.getId(),
-                    "updatedAt",   actualizado.getUpdatedAt(),
-                    "mensaje",     "Definición actualizada exitosamente"
-            ));
+                    "id", actualizado.getId(),
+                    "updatedAt", actualizado.getUpdatedAt(),
+                    "mensaje", "Definición actualizada exitosamente"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -81,17 +79,16 @@ public class ProcesoController {
     public ResponseEntity<?> cambiarEstado(
             @PathVariable Long id,
             @RequestBody Map<String, Object> body) {
-        
-        com.edu.javeriana.backend.model.EstadoProceso nuevoEstado = 
-            com.edu.javeriana.backend.model.EstadoProceso.valueOf((String) body.get("estado"));
+
+        com.edu.javeriana.backend.model.EstadoProceso nuevoEstado = com.edu.javeriana.backend.model.EstadoProceso
+                .valueOf((String) body.get("estado"));
         Long usuarioId = ((Number) body.get("usuarioId")).longValue();
 
         Proceso actualizado = procesoService.cambiarEstado(id, nuevoEstado, usuarioId);
 
         return ResponseEntity.ok(Map.of(
-                "id",        actualizado.getId(),
-                "estado",    actualizado.getEstado(),
-                "mensaje",   "Estado de proceso actualizado exitosamente"
-        ));
+                "id", actualizado.getId(),
+                "estado", actualizado.getEstado(),
+                "mensaje", "Estado de proceso actualizado exitosamente"));
     }
 }

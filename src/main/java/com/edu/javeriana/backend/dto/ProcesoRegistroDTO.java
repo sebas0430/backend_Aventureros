@@ -7,10 +7,14 @@ import lombok.Data;
 @Data
 public class ProcesoRegistroDTO {
 
-    @NotBlank(message = "El título del proceso es obligatorio")
-    private String titulo;
+    @NotBlank(message = "El nombre del proceso es obligatorio")
+    private String nombre;
 
-    private String definicionJson;
+    @NotBlank(message = "La descripción del proceso es obligatoria")
+    private String descripcion;
+
+    @NotBlank(message = "La categoría del proceso es obligatoria")
+    private String categoria;
 
     @NotNull(message = "El ID de la empresa es obligatorio")
     private Long empresaId;

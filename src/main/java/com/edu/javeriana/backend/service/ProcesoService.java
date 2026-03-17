@@ -23,6 +23,8 @@ public class ProcesoService implements IProcesoService {
 
     @Transactional
     public Proceso crearProceso(ProcesoRegistroDTO dto) {
+
+        // buscar la empresa
         Empresa empresa = empresaRepository.findById(dto.getEmpresaId())
                 .orElseThrow(() -> new IllegalArgumentException("Empresa no encontrada"));
 
@@ -30,10 +32,14 @@ public class ProcesoService implements IProcesoService {
                 .orElseThrow(() -> new IllegalArgumentException("Usuario autor no encontrado"));
 
         Proceso proceso = new Proceso();
-        proceso.setTitulo(dto.getTitulo());
-        proceso.setDefinicionJson(dto.getDefinicionJson());
+        proceso.setNombre(dto.getNombre());
+        proceso.setDescripcion(dto.getDescripcion());
+        proceso.setCategoria(dto.getCategoria());
         proceso.setEmpresa(empresa);
         proceso.setAutor(autor);
+
+        // Nace explícitamente en estado BORRADOR
+        proceso.setEstado(com.edu.javeriana.backend.model.EstadoProceso.BORRADOR);
 
         return procesoRepository.save(proceso);
     }
@@ -66,24 +72,23 @@ public class ProcesoService implements IProcesoService {
     }
 
     @Transactional
-    public Proceso cambiarEstado(Long procesoId, com.edu.javeriana.backend.model.EstadoProceso nuevoEstado, Long usuarioId) {
+    public Proceso cambiarEstado(Long procesoId, com.edu.javeriana.backend.model.EstadoProceso nuevoEstado,
+            Long usuarioId) {
         Proceso proceso = procesoRepository.findById(procesoId)
-                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException("Proceso no encontrado"));
+                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException(
+                        "Proceso no encontrado"));
 
         Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException(
+                        "Usuario no encontrado"));
 
         // Reglas de negocio básicas para cambio de estado:
-        // Solo el ADMIN_EMPRESA puede aprobar procesos.
-        if (nuevoEstado == com.edu.javeriana.backend.model.EstadoProceso.APROBADO) {
+        // Solo el ADMIN_EMPRESA puede aprobar/publicar procesos.
+        if (nuevoEstado == com.edu.javeriana.backend.model.EstadoProceso.PUBLICADO) {
             if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol())) {
-                throw new com.edu.javeriana.backend.exception.BusinessRuleException("Solo un administrador puede aprobar procesos.");
+                throw new com.edu.javeriana.backend.exception.BusinessRuleException(
+                        "Solo un administrador puede publicar procesos.");
             }
-        }
-
-        // Un proceso no puede pasar de BORRADOR directo a APROBADO sin pasar por PENDIENTE (opcional, ejemplo de regla lógica)
-        if (proceso.getEstado() == com.edu.javeriana.backend.model.EstadoProceso.BORRADOR && nuevoEstado == com.edu.javeriana.backend.model.EstadoProceso.APROBADO) {
-            throw new com.edu.javeriana.backend.exception.BusinessRuleException("El proceso debe pasar primero por estado PENDIENTE de revisión.");
         }
 
         proceso.setEstado(nuevoEstado);

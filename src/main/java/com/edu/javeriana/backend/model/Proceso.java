@@ -19,9 +19,17 @@ public class Proceso {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "El título del proceso es obligatorio")
+    @NotBlank(message = "El nombre del proceso es obligatorio")
     @Column(nullable = false)
-    private String titulo;
+    private String nombre;
+
+    @NotBlank(message = "La descripción del proceso es obligatoria")
+    @Column(nullable = false, length = 1000)
+    private String descripcion;
+
+    @NotBlank(message = "La categoría del proceso es obligatoria")
+    @Column(nullable = false)
+    private String categoria;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
