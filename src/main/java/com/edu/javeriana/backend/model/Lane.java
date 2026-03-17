@@ -8,22 +8,28 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
+/**
+ * Concepto de Lane (Swimlane) vs Pool:
+ * Un Pool representa los límites externos de un proceso a nivel organizacional (por ejemplo, una empresa).
+ * Un Lane es una subdivisión de un Pool que se usa para organizar y categorizar responsabilidades. 
+ * Generalmente representa un rol, un departamento o un sistema específico dentro de ese Pool 
+ * que ejecuta ciertas tareas (actividades).
+ */
 @Entity
-@Table(name = "pool")
+@Table(name = "lane")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Pool {
+public class Lane {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "El nombre del pool es obligatorio")
+    @NotBlank(message = "El nombre del lane es obligatorio")
     @Column(nullable = false)
     private String nombre;
 
@@ -32,8 +38,8 @@ public class Pool {
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "empresa_id", nullable = false)
-    private Empresa empresa;
+    @JoinColumn(name = "pool_id", nullable = false)
+    private Pool pool;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -43,11 +49,6 @@ public class Pool {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    @JsonIgnore
-    @OneToMany(mappedBy = "pool", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Proceso> procesos;
-
-    @JsonIgnore
-    @OneToMany(mappedBy = "pool", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Lane> lanes;
+    // TODO: En un futuro aquí mapearemos la relación @OneToMany hacia las Actividades (List<Actividad>) 
+    // que se ejecutan específicamente dentro de este rol/departamento/lane.
 }
