@@ -23,4 +23,22 @@ public interface EventoMensajeRepository extends JpaRepository<EventoMensaje, Lo
             @Param("tipo") TipoEventoMensaje tipo, 
             @Param("empresaId") Long empresaId,
             @Param("estado") com.edu.javeriana.backend.model.EstadoProceso estado);
+
+    /** Busca CATCHes activos por nombre de mensaje y empresa (procesos PUBLICADOS) */
+    @Query("SELECT e FROM EventoMensaje e JOIN e.proceso p WHERE " +
+           "e.nombreMensaje = :nombre AND e.tipo = 'CATCH' AND e.activo = true AND " +
+           "p.empresa.id = :empresaId AND p.estado = 'PUBLICADO'")
+    List<EventoMensaje> findActiveCatchesByNombreAndEmpresa(
+            @Param("nombre") String nombre,
+            @Param("empresaId") Long empresaId);
+
+    /** Busca CATCHes activos por nombre + correlación + empresa */
+    @Query("SELECT e FROM EventoMensaje e JOIN e.proceso p WHERE " +
+           "e.nombreMensaje = :nombre AND e.tipo = 'CATCH' AND e.activo = true AND " +
+           "e.correlationKey = :correlationKey AND " +
+           "p.empresa.id = :empresaId AND p.estado = 'PUBLICADO'")
+    List<EventoMensaje> findActiveCatchesByNombreAndCorrelationAndEmpresa(
+            @Param("nombre") String nombre,
+            @Param("correlationKey") String correlationKey,
+            @Param("empresaId") Long empresaId);
 }

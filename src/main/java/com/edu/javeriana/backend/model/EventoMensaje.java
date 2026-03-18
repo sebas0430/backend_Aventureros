@@ -35,6 +35,15 @@ public class EventoMensaje {
     @Enumerated(EnumType.STRING)
     private ComportamientoFallback fallback;
 
+    /** Clave de correlación para emparejar mensajes entrantes con instancias específicas */
+    @Column(name = "correlation_key", length = 500)
+    private String correlationKey;
+
+    /** Indica si este CATCH está activo y esperando mensajes */
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean activo = true;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "proceso_id", nullable = false)
     @JsonIgnore
