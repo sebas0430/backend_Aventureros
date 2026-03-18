@@ -23,4 +23,10 @@ public interface IProcesoService {
     void eliminarProceso(Long procesoId, Long usuarioId);
 
     Proceso cambiarEstado(Long procesoId, com.edu.javeriana.backend.model.EstadoProceso nuevoEstado, Long usuarioId);
+
+    void compartirProceso(Long procesoId, com.edu.javeriana.backend.dto.ProcesoCompartirDTO dto);
+
+    void quitarComparticionProceso(Long procesoId, Long poolDestinoId, Long usuarioId);
+
+    List<Proceso> listarProcesosCompartidosConPool(Long poolId, Long usuarioId);
 }

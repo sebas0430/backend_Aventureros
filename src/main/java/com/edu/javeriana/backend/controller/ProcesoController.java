@@ -134,4 +134,49 @@ public class ProcesoController {
                 "estado", actualizado.getEstado(),
                 "mensaje", "Estado de proceso actualizado exitosamente"));
     }
+
+    // POST /api/procesos/{id}/compartir
+    @PostMapping("/{id}/compartir")
+    public ResponseEntity<?> compartirProceso(
+            @PathVariable Long id,
+            @Valid @RequestBody com.edu.javeriana.backend.dto.ProcesoCompartirDTO dto) {
+        try {
+            procesoService.compartirProceso(id, dto);
+            return ResponseEntity.ok(Map.of("mensaje", "Proceso compartido exitosamente con el Pool."));
+        } catch (com.edu.javeriana.backend.exception.BusinessRuleException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (com.edu.javeriana.backend.exception.ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    // DELETE /api/procesos/{id}/compartir/{poolDestinoId}
+    @DeleteMapping("/{id}/compartir/{poolDestinoId}")
+    public ResponseEntity<?> quitarComparticionProceso(
+            @PathVariable Long id,
+            @PathVariable Long poolDestinoId,
+            @RequestParam Long usuarioId) {
+        try {
+            procesoService.quitarComparticionProceso(id, poolDestinoId, usuarioId);
+            return ResponseEntity.ok(Map.of("mensaje", "Compartición revocada exitosamente."));
+        } catch (com.edu.javeriana.backend.exception.BusinessRuleException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (com.edu.javeriana.backend.exception.ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    // GET /api/procesos/compartidos/{poolId}
+    @GetMapping("/compartidos/{poolId}")
+    public ResponseEntity<?> listarProcesosCompartidosConPool(
+            @PathVariable Long poolId,
+            @RequestParam Long usuarioId) {
+        try {
+            return ResponseEntity.ok(procesoService.listarProcesosCompartidosConPool(poolId, usuarioId));
+        } catch (com.edu.javeriana.backend.exception.BusinessRuleException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (com.edu.javeriana.backend.exception.ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
 }
