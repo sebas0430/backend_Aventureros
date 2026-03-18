@@ -39,6 +39,18 @@ public class EventoMensaje {
     @Column(name = "correlation_key", length = 500)
     private String correlationKey;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_correlacion")
+    private ReglaCorrelacion tipoCorrelacion;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "politica_multiples")
+    private PoliticaMultiplesCoincidencias politicaMultiples;
+
+    @Column(name = "crear_instancia_si_falla")
+    @Builder.Default
+    private boolean crearInstanciaSiFalla = false;
+
     /** Indica si este CATCH está activo y esperando mensajes */
     @Column(nullable = false)
     @Builder.Default

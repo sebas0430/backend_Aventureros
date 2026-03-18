@@ -30,6 +30,7 @@ public class MessageCatchService implements IMessageCatchService {
     private final RecepcionMensajeRepository recepcionMensajeRepository;
     private final ConectorExternoRepository conectorExternoRepository;
     private final EmpresaRepository empresaRepository;
+    private final InstanciaProcesoRepository instanciaProcesoRepository;
 
     @Override
     @Transactional
@@ -80,33 +81,86 @@ public class MessageCatchService implements IMessageCatchService {
         List<RecepcionMensaje> recepciones = new ArrayList<>();
 
         for (EventoMensaje catchEvento : catchesActivos) {
-            // Mapear variables del payload al schema esperado por el CATCH
             String variablesMapeadas = mapearVariables(payloadSanitizado, catchEvento.getPayloadSchema());
 
-            // Determinar acción: si el proceso está en BORRADOR/EN_REVISION se "activa", si está PUBLICADO se "continúa"
-            EstadoProceso estadoProceso = catchEvento.getProceso().getEstado();
-            String accion = estadoProceso == EstadoProceso.PUBLICADO 
-                    ? "CONTINUAR_INSTANCIA" 
-                    : "ACTIVAR_INSTANCIA";
+            // 1. Buscar las Instancias de Proceso Activas para esta definición de Proceso
+            List<InstanciaProceso> instanciasActivas;
+            if (dto.getCorrelationKey() != null && catchEvento.getTipoCorrelacion() == ReglaCorrelacion.BUSINESS_KEY) {
+                instanciasActivas = instanciaProcesoRepository.findByBusinessKeyAndProcesoIdAndEstado(
+                        dto.getCorrelationKey(), catchEvento.getProceso().getId(), EstadoInstancia.ACTIVA);
+            } else {
+                instanciasActivas = instanciaProcesoRepository.findByProcesoIdAndEstado(
+                        catchEvento.getProceso().getId(), EstadoInstancia.ACTIVA);
+            }
 
-            RecepcionMensaje recepcion = RecepcionMensaje.builder()
-                    .eventoCatch(catchEvento)
-                    .fuenteMensaje(dto.getFuente().toUpperCase())
-                    .identificadorEmisor(dto.getIdentificadorEmisor())
-                    .payloadRecibido(payloadSanitizado)
-                    .variablesMapeadas(variablesMapeadas)
-                    .correlationKeyUsada(dto.getCorrelationKey())
-                    .credencialValidada(credencialValidada)
-                    .accionTomada(accion)
-                    .detalle("Mensaje '" + dto.getNombreMensaje() + "' recibido exitosamente por el proceso " 
-                            + catchEvento.getProceso().getId())
-                    .build();
+            // 2. Correlación: Determinar a qué instancias entregar el mensaje
+            List<InstanciaProceso> destinos = new ArrayList<>();
 
-            recepciones.add(recepcionMensajeRepository.save(recepcion));
+            if (instanciasActivas.isEmpty()) {
+                if (catchEvento.isCrearInstanciaSiFalla()) {
+                    InstanciaProceso nuevaInstancia = InstanciaProceso.builder()
+                            .proceso(catchEvento.getProceso())
+                            .businessKey(dto.getCorrelationKey())
+                            .estado(EstadoInstancia.ACTIVA)
+                            .variables(variablesMapeadas)
+                            .build();
+                    destinos.add(instanciaProcesoRepository.save(nuevaInstancia));
+                } else {
+                    log.warn("Correlación fallida: No se encontraron instancias para el Catch en el proceso {} y 'crearInstanciaSiFalla' es falso", catchEvento.getProceso().getId());
+                    continue; // Skip este catch
+                }
+            } else if (instanciasActivas.size() == 1) {
+                destinos.add(instanciasActivas.get(0));
+            } else {
+                // Hay múltiples coincidencias: aplicar política
+                PoliticaMultiplesCoincidencias politica = catchEvento.getPoliticaMultiples() != null ? 
+                        catchEvento.getPoliticaMultiples() : PoliticaMultiplesCoincidencias.ERROR;
 
-            log.info("AUDITORIA (MESSAGE CATCH): Proceso {} recibió mensaje '{}' desde {} (emisor={}). Acción: {}",
-                    catchEvento.getProceso().getId(), dto.getNombreMensaje(), dto.getFuente(),
-                    dto.getIdentificadorEmisor(), accion);
+                switch (politica) {
+                    case ENTREGAR_A_PRIMERA -> destinos.add(instanciasActivas.get(0));
+                    case ENTREGAR_A_TODAS -> destinos.addAll(instanciasActivas);
+                    case CREAR_NUEVA_INSTANCIA -> {
+                        InstanciaProceso nueva = InstanciaProceso.builder()
+                                .proceso(catchEvento.getProceso())
+                                .businessKey(dto.getCorrelationKey())
+                                .estado(EstadoInstancia.ACTIVA)
+                                .variables(variablesMapeadas)
+                                .build();
+                        destinos.add(instanciaProcesoRepository.save(nueva));
+                    }
+                    case ERROR -> throw new BusinessRuleException("Se encontraron múltiples instancias activas y la política de correlación indica ERROR para el proceso " + catchEvento.getProceso().getId());
+                }
+            }
+
+            // 3. Registrar la recepción para cada destino
+            for (InstanciaProceso in : destinos) {
+                // Actualizar variables de la instancia
+                if (in.getId() != null) {
+                    in.setVariables(variablesMapeadas); // Simple replace for now, in prod merge JSON
+                    instanciaProcesoRepository.save(in);
+                }
+
+                String accion = (in.getId() != null && !catchEvento.isCrearInstanciaSiFalla() && !instanciasActivas.isEmpty()) 
+                        ? "CONTINUAR_INSTANCIA_ID_" + in.getId() 
+                        : "ACTIVAR_NUEVA_INSTANCIA_ID_" + in.getId();
+
+                RecepcionMensaje recepcion = RecepcionMensaje.builder()
+                        .eventoCatch(catchEvento)
+                        .fuenteMensaje(dto.getFuente().toUpperCase())
+                        .identificadorEmisor(dto.getIdentificadorEmisor())
+                        .payloadRecibido(payloadSanitizado)
+                        .variablesMapeadas(variablesMapeadas)
+                        .correlationKeyUsada(dto.getCorrelationKey())
+                        .credencialValidada(credencialValidada)
+                        .accionTomada(accion)
+                        .detalle("Entregado a Instancia " + in.getId() + " del Proceso " + catchEvento.getProceso().getId())
+                        .build();
+
+                recepciones.add(recepcionMensajeRepository.save(recepcion));
+
+                log.info("AUDITORIA (MESSAGE CATCH): Instancia {} (Proceso {}) recibió mensaje '{}' desde {}. Acción: {}",
+                        in.getId(), catchEvento.getProceso().getId(), dto.getNombreMensaje(), dto.getFuente(), accion);
+            }
         }
 
         return recepciones;
