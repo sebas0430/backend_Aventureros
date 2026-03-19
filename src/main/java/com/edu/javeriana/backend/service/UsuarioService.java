@@ -37,7 +37,6 @@ public class UsuarioService implements IUsuarioService {
         Usuario guardado = usuarioRepository.save(usuario);
         
         // Enviar invitación por correo
-        // (El envío real dentro de EmailService está comentado hasta que pongas las credenciales)
         emailService.enviarInvitacion(
                 usuario.getUsername(), 
                 dto.getPasswordHash(), 
