@@ -15,6 +15,7 @@ public class UsuarioService implements IUsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final EmpresaRepository empresaRepository;
+    private final EmailService emailService;
 
     @Transactional
     public Usuario invitarUsuario(UsuarioRegistroDTO dto) {
@@ -33,7 +34,17 @@ public class UsuarioService implements IUsuarioService {
         usuario.setEmpresa(empresa);
         usuario.setActivo(true);
 
-        return usuarioRepository.save(usuario);
+        Usuario guardado = usuarioRepository.save(usuario);
+        
+        // Enviar invitación por correo
+        emailService.enviarInvitacion(
+                usuario.getUsername(), 
+                dto.getPasswordHash(), 
+                empresa.getNombre(), 
+                usuario.getRol()
+        );
+
+        return guardado;
     }
 
     @Transactional(readOnly = true)

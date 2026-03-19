@@ -51,12 +51,8 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:8080/actuator/health || exit 1
 
-# Variables de entorno por defecto (sobreescribibles en docker-compose o al correr el contenedor)
-ENV SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/gestion_procesos \
-    SPRING_DATASOURCE_USERNAME=postgres \
-    SPRING_DATASOURCE_PASSWORD=postgres \
-    SPRING_JPA_HIBERNATE_DDL_AUTO=update \
-    JAVA_OPTS="-Xms256m -Xmx512m"
+
+ENV JAVA_OPTS="-Xms256m -Xmx512m"
 
 # Comando de inicio
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.war"]
