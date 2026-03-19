@@ -7,11 +7,13 @@ import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.model.*;
 import com.edu.javeriana.backend.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ActividadService implements IActividadService {
@@ -54,6 +56,7 @@ public class ActividadService implements IActividadService {
                 .build();
 
         actividad = actividadRepository.save(actividad);
+        log.info("Actividad {} creada exitosamente en proceso {}", actividad.getId(), proceso.getId());
 
         // Guardar en historial del proceso (HU-08: la actividad queda vinculada)
         HistorialProceso historial = HistorialProceso.builder()
@@ -119,8 +122,9 @@ public class ActividadService implements IActividadService {
             actividad.setOrden(dto.getOrden());
         }
 
-        if (cambios.length() > 0) {
+        if (!cambios.isEmpty()) {
             actividad = actividadRepository.save(actividad);
+            log.info("Actividad {} editada exitosamente", actividadId);
 
             // HU-09: Los cambios se guardan en el historial del proceso
             HistorialProceso historial = HistorialProceso.builder()
@@ -157,6 +161,7 @@ public class ActividadService implements IActividadService {
         // Marcar como inactiva (soft delete — la confirmación viene del frontend)
         actividad.setActiva(false);
         actividadRepository.save(actividad);
+        log.info("Actividad {} marcada como inactiva (soft delete)", actividadId);
 
         // HU-10: El flujo del proceso se ajusta automáticamente —
         // reordenar las actividades restantes del proceso
