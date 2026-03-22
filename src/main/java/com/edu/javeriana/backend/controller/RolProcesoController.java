@@ -59,4 +59,12 @@ public class RolProcesoController {
     public ResponseEntity<RolProceso> obtenerRolProceso(@PathVariable Long id) {
         return ResponseEntity.ok(rolProcesoService.obtenerRolProcesoPorId(id));
     }
+
+    // HU-19: DELETE /api/roles-proceso/{id}?usuarioId=X — Eliminar un rol de proceso
+    // La confirmación previa a la eliminación se gestiona en el frontend.
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> eliminarRolProceso(@PathVariable Long id, @RequestParam Long usuarioId) {
+        rolProcesoService.eliminarRolProceso(id, usuarioId);
+        return ResponseEntity.ok(Map.of("mensaje", "Rol de proceso eliminado exitosamente"));
+    }
 }

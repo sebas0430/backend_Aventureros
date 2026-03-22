@@ -14,5 +14,7 @@ public interface IRolProcesoService {
 
     List<RolProceso> listarRolesPorEmpresa(Long empresaId, Long usuarioId);
 
+    void eliminarRolProceso(Long id, Long usuarioId);
+
     RolProceso obtenerRolProcesoPorId(Long id);
 }

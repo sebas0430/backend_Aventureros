@@ -7,6 +7,7 @@ import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.model.Empresa;
 import com.edu.javeriana.backend.model.RolProceso;
 import com.edu.javeriana.backend.model.Usuario;
+import com.edu.javeriana.backend.repository.ActividadRepository;
 import com.edu.javeriana.backend.repository.EmpresaRepository;
 import com.edu.javeriana.backend.repository.RolProcesoRepository;
 import com.edu.javeriana.backend.repository.UsuarioRepository;
@@ -25,6 +26,7 @@ public class RolProcesoService implements IRolProcesoService {
     private final RolProcesoRepository rolProcesoRepository;
     private final EmpresaRepository empresaRepository;
     private final UsuarioRepository usuarioRepository;
+    private final ActividadRepository actividadRepository;
 
     @Override
     @Transactional
@@ -133,6 +135,40 @@ public class RolProcesoService implements IRolProcesoService {
         }
 
         return rolProcesoRepository.findByEmpresaId(empresaId);
+    }
+
+    @Override
+    @Transactional
+    public void eliminarRolProceso(Long id, Long usuarioId) {
+
+        RolProceso rol = rolProcesoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Rol de proceso no encontrado"));
+
+        Usuario solicitante = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        // Validar multitenancy: el usuario debe pertenecer a la empresa del rol
+        if (!solicitante.getEmpresa().getId().equals(rol.getEmpresa().getId())) {
+            throw new BusinessRuleException("No perteneces a la empresa de este rol");
+        }
+
+        // Solo un administrador de la empresa puede eliminar roles de proceso
+        if (!"ADMINISTRADOR_EMPRESA".equals(solicitante.getRol())) {
+            throw new BusinessRuleException(
+                    "Solo un administrador de la empresa puede eliminar roles de proceso");
+        }
+
+        // HU-19: Validar que el rol no esté asignado a ninguna actividad
+        if (actividadRepository.existsByRolProcesoId(rol.getId())) {
+            throw new BusinessRuleException(
+                    "No se puede eliminar el rol '" + rol.getNombre()
+                    + "' porque está asignado a una o más actividades. Reasigne las actividades primero.");
+        }
+
+        rolProcesoRepository.delete(rol);
+
+        log.info("AUDITORIA: Usuario {} (ADMIN) eliminó el Rol de Proceso '{}' (ID={}) de la Empresa ID={}",
+                solicitante.getId(), rol.getNombre(), id, rol.getEmpresa().getId());
     }
 
     @Override
