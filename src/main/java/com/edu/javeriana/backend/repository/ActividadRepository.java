@@ -20,4 +20,7 @@ public interface ActividadRepository extends JpaRepository<Actividad, Long> {
 
     // HU-19: Validar si alguna actividad tiene asignado un rol de proceso
     boolean existsByRolProcesoId(Long rolProcesoId);
+
+    // HU-20: Obtener las actividades que usan un rol de proceso específico
+    List<Actividad> findByRolProcesoId(Long rolProcesoId);
 }

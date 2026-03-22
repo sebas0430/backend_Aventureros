@@ -1,5 +1,6 @@
 package com.edu.javeriana.backend.controller;
 
+import com.edu.javeriana.backend.dto.RolProcesoDetalleDTO;
 import com.edu.javeriana.backend.dto.RolProcesoEdicionDTO;
 import com.edu.javeriana.backend.dto.RolProcesoRegistroDTO;
 import com.edu.javeriana.backend.model.RolProceso;
@@ -66,5 +67,20 @@ public class RolProcesoController {
     public ResponseEntity<?> eliminarRolProceso(@PathVariable Long id, @RequestParam Long usuarioId) {
         rolProcesoService.eliminarRolProceso(id, usuarioId);
         return ResponseEntity.ok(Map.of("mensaje", "Rol de proceso eliminado exitosamente"));
+    }
+
+    // HU-20: GET /api/roles-proceso/empresa/{empresaId}/detalle?usuarioId=X
+    // Listado con nombre, descripción y en qué procesos/actividades se utiliza cada rol
+    @GetMapping("/empresa/{empresaId}/detalle")
+    public ResponseEntity<List<RolProcesoDetalleDTO>> consultarRolesConDetalle(
+            @PathVariable Long empresaId,
+            @RequestParam Long usuarioId) {
+        return ResponseEntity.ok(rolProcesoService.consultarRolesConDetalle(empresaId, usuarioId));
+    }
+
+    // HU-20: GET /api/roles-proceso/{id}/detalle — Detalle de un rol específico con su uso
+    @GetMapping("/{id}/detalle")
+    public ResponseEntity<RolProcesoDetalleDTO> consultarRolProcesoDetalle(@PathVariable Long id) {
+        return ResponseEntity.ok(rolProcesoService.consultarRolProcesoDetalle(id));
     }
 }
