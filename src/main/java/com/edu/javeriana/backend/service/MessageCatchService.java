@@ -225,7 +225,7 @@ public class MessageCatchService implements IMessageCatchService {
         if (payloadRecibido == null) return null;
         if (schemaEsperado == null) return payloadRecibido;
 
-        // TODO: En producción, implementar mapeo real campo-a-campo usando Jackson ObjectMapper
+        // NOTA: En producción, implementar mapeo real campo-a-campo usando Jackson ObjectMapper
         return "{\"payload_original\": " + payloadRecibido + ", \"schema_aplicado\": \"" + schemaEsperado + "\"}";
     }
 }

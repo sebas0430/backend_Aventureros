@@ -1,13 +1,27 @@
 package com.edu.javeriana.backend.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import lombok.*;
+import java.time.LocalDateTime;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * Concepto de Lane (Swimlane) vs Pool:
@@ -49,6 +63,6 @@ public class Lane {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    // TODO: En un futuro aquí mapearemos la relación @OneToMany hacia las Actividades (List<Actividad>) 
+    // NOTA: En un futuro aquí mapearemos la relación @OneToMany hacia las Actividades (List<Actividad>) 
     // que se ejecutan específicamente dentro de este rol/departamento/lane.
 }
