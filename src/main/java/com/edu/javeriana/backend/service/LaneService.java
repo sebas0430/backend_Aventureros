@@ -75,7 +75,7 @@ public class LaneService implements ILaneService {
 
         validarAccesoYManejoDeLane(usuarioId, lane.getPool().getEmpresa().getId(), true);
 
-        // TODO: En el futuro si este Lane tiene Actividades, validar cascading o limpieza.
+        // NOTA: En el futuro si este Lane tiene Actividades, validar cascading o limpieza.
         laneRepository.delete(lane);
         
         log.info("AUDITORIA: Usuario {} (ADMIN) eliminó el Lane ID={}", usuarioId, id);

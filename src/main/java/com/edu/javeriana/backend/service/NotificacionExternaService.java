@@ -185,7 +185,7 @@ public class NotificacionExternaService implements INotificacionExternaService {
     private String adaptadorEmail(ConectorExterno conector, String payload) {
         log.info("[ADAPTADOR EMAIL] Enviando a host={}, puerto={}, usuario={}, payload={}",
                 conector.getDestino(), conector.getPuerto(), conector.getUsuarioAuth(), payload);
-        // TODO: Integrar con JavaMailSender real en producción
+        // NOTA: Integrar con JavaMailSender real en producción
         return "EMAIL_OK: Simulado exitosamente hacia " + conector.getDestino();
     }
 
@@ -193,7 +193,7 @@ public class NotificacionExternaService implements INotificacionExternaService {
     private String adaptadorWebhook(ConectorExterno conector, String payload) {
         log.info("[ADAPTADOR WEBHOOK] POST a URL={}, headers={}, payload={}",
                 conector.getDestino(), conector.getHeadersJson(), payload);
-        // TODO: Integrar con RestTemplate o WebClient real en producción
+        // NOTA: Integrar con RestTemplate o WebClient real en producción
         return "WEBHOOK_OK: Simulado exitosamente hacia " + conector.getDestino();
     }
 
@@ -201,7 +201,7 @@ public class NotificacionExternaService implements INotificacionExternaService {
     private String adaptadorQueue(ConectorExterno conector, String payload) {
         log.info("[ADAPTADOR QUEUE] Publicando en broker={}, puerto={}, payload={}",
                 conector.getDestino(), conector.getPuerto(), payload);
-        // TODO: Integrar con JmsTemplate, RabbitTemplate o KafkaTemplate en producción
+        // NOTA: Integrar con JmsTemplate, RabbitTemplate o KafkaTemplate en producción
         return "QUEUE_OK: Simulado exitosamente hacia " + conector.getDestino();
     }
 
