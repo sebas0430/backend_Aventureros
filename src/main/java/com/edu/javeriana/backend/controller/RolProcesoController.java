@@ -1,5 +1,6 @@
 package com.edu.javeriana.backend.controller;
 
+import com.edu.javeriana.backend.dto.RolProcesoEdicionDTO;
 import com.edu.javeriana.backend.dto.RolProcesoRegistroDTO;
 import com.edu.javeriana.backend.model.RolProceso;
 import com.edu.javeriana.backend.service.IRolProcesoService;
@@ -29,6 +30,19 @@ public class RolProcesoController {
                 "descripcion", rol.getDescripcion() != null ? rol.getDescripcion() : "",
                 "empresaId", rol.getEmpresa().getId(),
                 "mensaje", "Rol de proceso creado exitosamente"
+        ));
+    }
+
+    // HU-18: PUT /api/roles-proceso/{id} — Editar un rol de proceso
+    @PutMapping("/{id}")
+    public ResponseEntity<?> editarRolProceso(@PathVariable Long id,
+                                              @Valid @RequestBody RolProcesoEdicionDTO dto) {
+        RolProceso rol = rolProcesoService.editarRolProceso(id, dto);
+        return ResponseEntity.ok(Map.of(
+                "id", rol.getId(),
+                "nombre", rol.getNombre(),
+                "descripcion", rol.getDescripcion() != null ? rol.getDescripcion() : "",
+                "mensaje", "Rol de proceso editado exitosamente"
         ));
     }
 

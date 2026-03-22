@@ -1,5 +1,6 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.dto.RolProcesoEdicionDTO;
 import com.edu.javeriana.backend.dto.RolProcesoRegistroDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
 import com.edu.javeriana.backend.exception.ResourceNotFoundException;
@@ -64,6 +65,56 @@ public class RolProcesoService implements IRolProcesoService {
                 solicitante.getId(), rolGuardado.getNombre(), rolGuardado.getId(), empresa.getId());
 
         return rolGuardado;
+    }
+
+    @Override
+    @Transactional
+    public RolProceso editarRolProceso(Long id, RolProcesoEdicionDTO dto) {
+
+        RolProceso rol = rolProcesoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Rol de proceso no encontrado"));
+
+        Usuario solicitante = usuarioRepository.findById(dto.getUsuarioId())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        // Validar multitenancy: el usuario debe pertenecer a la empresa del rol
+        if (!solicitante.getEmpresa().getId().equals(rol.getEmpresa().getId())) {
+            throw new BusinessRuleException("No perteneces a la empresa de este rol");
+        }
+
+        // Solo un administrador de la empresa puede editar roles de proceso
+        if (!"ADMINISTRADOR_EMPRESA".equals(solicitante.getRol())) {
+            throw new BusinessRuleException(
+                    "Solo un administrador de la empresa puede editar roles de proceso");
+        }
+
+        // Si el nombre cambió, validar que no exista otro rol con ese nombre en la misma empresa
+        if (!rol.getNombre().equals(dto.getNombre())
+                && rolProcesoRepository.existsByEmpresaIdAndNombre(rol.getEmpresa().getId(), dto.getNombre())) {
+            throw new BusinessRuleException(
+                    "Ya existe un rol de proceso con el nombre '" + dto.getNombre() + "' en esta empresa");
+        }
+
+        // Actualizar campos in-place (los procesos mantienen la referencia al mismo ID)
+        StringBuilder cambios = new StringBuilder();
+        if (!rol.getNombre().equals(dto.getNombre())) {
+            cambios.append("Nombre cambiado de '").append(rol.getNombre()).append("' a '").append(dto.getNombre()).append("'. ");
+            rol.setNombre(dto.getNombre());
+        }
+        String descAnterior = rol.getDescripcion() != null ? rol.getDescripcion() : "";
+        String descNueva = dto.getDescripcion() != null ? dto.getDescripcion() : "";
+        if (!descAnterior.equals(descNueva)) {
+            cambios.append("Descripción actualizada. ");
+            rol.setDescripcion(dto.getDescripcion());
+        }
+
+        RolProceso rolActualizado = rolProcesoRepository.save(rol);
+
+        log.info("AUDITORIA: Usuario {} (ADMIN) editó el Rol de Proceso ID={} — {}",
+                solicitante.getId(), rolActualizado.getId(),
+                cambios.length() > 0 ? cambios.toString().trim() : "Sin cambios detectados");
+
+        return rolActualizado;
     }
 
     @Override
