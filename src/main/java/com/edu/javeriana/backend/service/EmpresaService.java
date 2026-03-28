@@ -1,13 +1,14 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.service.interfaces.*;
+
 import com.edu.javeriana.backend.dto.EmpresaRegistroDTO;
 import com.edu.javeriana.backend.model.Empresa;
 import com.edu.javeriana.backend.model.Pool;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.EmpresaRepository;
-import com.edu.javeriana.backend.repository.PoolRepository;
-import com.edu.javeriana.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,8 +19,8 @@ import java.util.ArrayList;
 public class EmpresaService implements IEmpresaService {
 
     private final EmpresaRepository empresaRepository;
-    private final UsuarioRepository usuarioRepository;
-    private final PoolRepository poolRepository;
+    private final @Lazy IUsuarioService usuarioService;
+    private final @Lazy IPoolService poolService;
 
     @Override
     @Transactional
@@ -27,19 +28,19 @@ public class EmpresaService implements IEmpresaService {
         if (empresaRepository.findByNit(dto.getNit()).isPresent()) {
             throw new IllegalArgumentException("Ya existe una empresa con ese NIT");
         }
-        if (usuarioRepository.findByUsername(dto.getCorreoContacto()).isPresent()) {
+        if (usuarioService.existeUsuarioPorUsername(dto.getCorreoContacto())) {
             throw new IllegalArgumentException("Ya existe un usuario con este username");
         }
 
         Empresa empresa = new Empresa();
         empresa.setNombre(dto.getNombre());
         empresa.setNit(dto.getNit());
-        //empresa.setCorreoContacto(dto.getCorreoContacto());
+        // empresa.setCorreoContacto(dto.getCorreoContacto());
         empresa.setUsuarios(new ArrayList<>());
 
         empresa = empresaRepository.save(empresa);
 
-        //Crear usuario administrador inicial de la empresa
+        // Crear usuario administrador inicial de la empresa
         Usuario admin = new Usuario();
         admin.setUsername(dto.getCorreoContacto());
         admin.setPasswordHash(dto.getPasswordAdmin());
@@ -47,7 +48,7 @@ public class EmpresaService implements IEmpresaService {
         admin.setActivo(true);
         admin.setEmpresa(empresa);
 
-        usuarioRepository.save(admin);
+        usuarioService.guardarUsuario(admin);
 
         // Crear Pool por defecto para la empresa (HU-21)
         Pool poolDefault = Pool.builder()
@@ -55,8 +56,16 @@ public class EmpresaService implements IEmpresaService {
                 .descripcion("Área de procesos principal creada por defecto para la organización.")
                 .empresa(empresa)
                 .build();
-        poolRepository.save(poolDefault);
+        poolService.guardarPool(poolDefault);
 
         return empresa;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Empresa obtenerEmpresaPorId(Long id) {
+        return empresaRepository.findById(id)
+                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException(
+                        "Empresa no encontrada"));
     }
 }

@@ -1,11 +1,13 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.service.interfaces.*;
+
 import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.model.Documento;
 import com.edu.javeriana.backend.model.Proceso;
 import com.edu.javeriana.backend.repository.DocumentoRepository;
-import com.edu.javeriana.backend.repository.ProcesoRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,16 +25,16 @@ import java.util.UUID;
 public class DocumentoService implements IDocumentoService {
 
     private final DocumentoRepository documentoRepository;
-    private final ProcesoRepository procesoRepository;
+    private final @Lazy IProcesoService procesoService;
 
-    // Directorio donde se guardarán los archivos localmente (simulado local file system)
+    // Directorio donde se guardarán los archivos localmente (simulado local file
+    // system)
     private final String UPLOAD_DIR = "uploads/";
 
     @Override
     @Transactional
     public Documento subirDocumento(Long procesoId, MultipartFile archivo) {
-        Proceso proceso = procesoRepository.findById(procesoId)
-                .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado"));
+        Proceso proceso = procesoService.obtenerProcesoPorId(procesoId);
 
         if (archivo.isEmpty()) {
             throw new IllegalArgumentException("El archivo está vacío");
@@ -70,7 +72,7 @@ public class DocumentoService implements IDocumentoService {
     @Override
     @Transactional(readOnly = true)
     public List<Documento> listarDocumentosPorProceso(Long procesoId) {
-        if (!procesoRepository.existsById(procesoId)) {
+        if (!procesoService.existeProcesoPorId(procesoId)) {
             throw new ResourceNotFoundException("Proceso no encontrado");
         }
         return documentoRepository.findByProcesoId(procesoId);

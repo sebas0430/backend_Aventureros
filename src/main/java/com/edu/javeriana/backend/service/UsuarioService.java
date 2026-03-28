@@ -1,10 +1,13 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.service.interfaces.*;
+
 import com.edu.javeriana.backend.dto.UsuarioRegistroDTO;
 import com.edu.javeriana.backend.model.Empresa;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.EmpresaRepository;
 import com.edu.javeriana.backend.repository.UsuarioRepository;
+import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,31 +32,27 @@ public class UsuarioService implements IUsuarioService {
         Usuario usuario = new Usuario();
         usuario.setUsername(dto.getCorreo());
         usuario.setPasswordHash(dto.getPasswordHash());
-        //se asigna el rol al usuario dentro de la empresa
+        // se asigna el rol al usuario dentro de la empresa
         usuario.setRol(dto.getRol());
         usuario.setEmpresa(empresa);
         usuario.setActivo(true);
 
         Usuario guardado = usuarioRepository.save(usuario);
-        
+
         // Enviar invitación por correo
         emailService.enviarInvitacion(
-                usuario.getUsername(), 
-                dto.getPasswordHash(), 
-                empresa.getNombre(), 
-                usuario.getRol()
-        );
+                usuario.getUsername(),
+                dto.getPasswordHash(),
+                empresa.getNombre(),
+                usuario.getRol());
 
         return guardado;
     }
 
     @Transactional(readOnly = true)
     public Usuario iniciarSesion(com.edu.javeriana.backend.dto.UsuarioLoginDTO dto) {
-        
-        // En tu modelo el nombre del campo sigue siendo "username", aunque se le pase un correo
         Usuario usuario = usuarioRepository.findByUsername(dto.getCorreo())
                 .orElseThrow(() -> new IllegalArgumentException("Credenciales inválidas"));
-
 
         if (!usuario.getPasswordHash().equals(dto.getPassword())) {
             throw new IllegalArgumentException("Credenciales inválidas");
@@ -64,5 +63,24 @@ public class UsuarioService implements IUsuarioService {
         }
 
         return usuario;
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Usuario obtenerUsuarioPorId(Long id) {
+        return usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public boolean existeUsuarioPorUsername(String username) {
+        return usuarioRepository.findByUsername(username).isPresent();
+    }
+
+    @Transactional
+    @Override
+    public Usuario guardarUsuario(Usuario usuario) {
+        return usuarioRepository.save(usuario);
     }
 }

@@ -1,5 +1,7 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.service.interfaces.*;
+
 import com.edu.javeriana.backend.dto.ProcesoRegistroDTO;
 import com.edu.javeriana.backend.model.Empresa;
 import com.edu.javeriana.backend.model.Pool;
@@ -91,6 +93,11 @@ public class ProcesoService implements IProcesoService {
 
     @Override
     @Transactional(readOnly = true)
+    public boolean existeProcesoPorId(Long id) {
+        return procesoRepository.existsById(id);
+    }
+
+    @Override
     public List<Proceso> filtrarProcesos(Long empresaId, String estadoStr, String categoria) {
         com.edu.javeriana.backend.model.EstadoProceso estado = null;
         if (estadoStr != null && !estadoStr.isBlank()) {
@@ -234,29 +241,38 @@ public class ProcesoService implements IProcesoService {
         proceso.setEstado(nuevoEstado);
         return procesoRepository.save(proceso);
     }
+
     @Override
     @Transactional
     public void compartirProceso(Long procesoId, com.edu.javeriana.backend.dto.ProcesoCompartirDTO dto) {
         Proceso proceso = procesoRepository.findById(procesoId)
-                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException("Proceso no encontrado"));
+                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException(
+                        "Proceso no encontrado"));
 
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException(
+                        "Usuario no encontrado"));
 
-        // Regla: Solo un administrador de la empresa dueña del proceso puede compartirlo
-        if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol()) || !usuario.getEmpresa().getId().equals(proceso.getEmpresa().getId())) {
-            throw new com.edu.javeriana.backend.exception.BusinessRuleException("Solo un administrador global de la empresa dueña puede compartir el proceso");
+        // Regla: Solo un administrador de la empresa dueña del proceso puede
+        // compartirlo
+        if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol())
+                || !usuario.getEmpresa().getId().equals(proceso.getEmpresa().getId())) {
+            throw new com.edu.javeriana.backend.exception.BusinessRuleException(
+                    "Solo un administrador global de la empresa dueña puede compartir el proceso");
         }
 
         Pool poolDestino = poolRepository.findById(dto.getPoolDestinoId())
-                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException("Pool destino no encontrado"));
+                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException(
+                        "Pool destino no encontrado"));
 
         // Validar si ya está compartido con ese pool
         if (procesoCompartidoRepository.findByProcesoIdAndPoolDestinoId(procesoId, poolDestino.getId()).isPresent()) {
-            throw new com.edu.javeriana.backend.exception.BusinessRuleException("El proceso ya está compartido con este Pool");
+            throw new com.edu.javeriana.backend.exception.BusinessRuleException(
+                    "El proceso ya está compartido con este Pool");
         }
 
-        com.edu.javeriana.backend.model.ProcesoCompartido comparticion = com.edu.javeriana.backend.model.ProcesoCompartido.builder()
+        com.edu.javeriana.backend.model.ProcesoCompartido comparticion = com.edu.javeriana.backend.model.ProcesoCompartido
+                .builder()
                 .proceso(proceso)
                 .poolDestino(poolDestino)
                 .permiso(dto.getPermiso())
@@ -264,11 +280,13 @@ public class ProcesoService implements IProcesoService {
 
         procesoCompartidoRepository.save(comparticion);
 
-        com.edu.javeriana.backend.model.HistorialProceso historial = com.edu.javeriana.backend.model.HistorialProceso.builder()
+        com.edu.javeriana.backend.model.HistorialProceso historial = com.edu.javeriana.backend.model.HistorialProceso
+                .builder()
                 .proceso(proceso)
                 .usuario(usuario)
                 .accion("COMPARTIR")
-                .detalle("Proceso compartido con el Pool ID: " + poolDestino.getId() + " con permiso " + dto.getPermiso().name())
+                .detalle("Proceso compartido con el Pool ID: " + poolDestino.getId() + " con permiso "
+                        + dto.getPermiso().name())
                 .build();
         historialProcesoRepository.save(historial);
     }
@@ -277,18 +295,23 @@ public class ProcesoService implements IProcesoService {
     @Transactional
     public void quitarComparticionProceso(Long procesoId, Long poolDestinoId, Long usuarioId) {
         Proceso proceso = procesoRepository.findById(procesoId)
-                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException("Proceso no encontrado"));
+                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException(
+                        "Proceso no encontrado"));
 
         Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException(
+                        "Usuario no encontrado"));
 
-        if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol()) || !usuario.getEmpresa().getId().equals(proceso.getEmpresa().getId())) {
-            throw new com.edu.javeriana.backend.exception.BusinessRuleException("Solo un administrador de la empresa dueña puede quitar la compartición");
+        if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol())
+                || !usuario.getEmpresa().getId().equals(proceso.getEmpresa().getId())) {
+            throw new com.edu.javeriana.backend.exception.BusinessRuleException(
+                    "Solo un administrador de la empresa dueña puede quitar la compartición");
         }
 
         procesoCompartidoRepository.deleteByProcesoIdAndPoolDestinoId(procesoId, poolDestinoId);
 
-        com.edu.javeriana.backend.model.HistorialProceso historial = com.edu.javeriana.backend.model.HistorialProceso.builder()
+        com.edu.javeriana.backend.model.HistorialProceso historial = com.edu.javeriana.backend.model.HistorialProceso
+                .builder()
                 .proceso(proceso)
                 .usuario(usuario)
                 .accion("QUITAR_COMPARTICION")
@@ -301,18 +324,23 @@ public class ProcesoService implements IProcesoService {
     @Transactional(readOnly = true)
     public List<Proceso> listarProcesosCompartidosConPool(Long poolId, Long usuarioId) {
         Pool pool = poolRepository.findById(poolId)
-                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException("Pool no encontrado"));
+                .orElseThrow(
+                        () -> new com.edu.javeriana.backend.exception.ResourceNotFoundException("Pool no encontrado"));
 
         Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException(
+                        "Usuario no encontrado"));
 
-        // Regla: Para ver los procesos compartidos con un pool, debes pertenecer a la empresa de ese pool
+        // Regla: Para ver los procesos compartidos con un pool, debes pertenecer a la
+        // empresa de ese pool
         if (!usuario.getEmpresa().getId().equals(pool.getEmpresa().getId())) {
-            throw new com.edu.javeriana.backend.exception.BusinessRuleException("No perteneces a la empresa de este pool");
+            throw new com.edu.javeriana.backend.exception.BusinessRuleException(
+                    "No perteneces a la empresa de este pool");
         }
 
-        List<com.edu.javeriana.backend.model.ProcesoCompartido> compartidos = procesoCompartidoRepository.findByPoolDestinoId(poolId);
-        
+        List<com.edu.javeriana.backend.model.ProcesoCompartido> compartidos = procesoCompartidoRepository
+                .findByPoolDestinoId(poolId);
+
         return compartidos.stream()
                 .map(com.edu.javeriana.backend.model.ProcesoCompartido::getProceso)
                 .toList();
@@ -320,29 +348,40 @@ public class ProcesoService implements IProcesoService {
 
     private void validarPermisoDeRol(Long usuarioId, Long poolId, String accion) {
         Usuario solicitante = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new com.edu.javeriana.backend.exception.ResourceNotFoundException(
+                        "Usuario no encontrado"));
 
         if ("ADMINISTRADOR_EMPRESA".equals(solicitante.getRol())) {
-             return;
+            return;
         }
 
-        com.edu.javeriana.backend.model.AsignacionRolPool asignacion = asignacionRolPoolRepository.findByUsuarioIdAndPoolId(usuarioId, poolId)
-               .orElseThrow(() -> new com.edu.javeriana.backend.exception.BusinessRuleException("No cuentas con ningún rol asignado en este pool/departamento."));
+        com.edu.javeriana.backend.model.AsignacionRolPool asignacion = asignacionRolPoolRepository
+                .findByUsuarioIdAndPoolId(usuarioId, poolId)
+                .orElseThrow(() -> new com.edu.javeriana.backend.exception.BusinessRuleException(
+                        "No cuentas con ningún rol asignado en este pool/departamento."));
 
         com.edu.javeriana.backend.model.RolPool rol = asignacion.getRol();
 
         switch (accion) {
             case "CREAR" -> {
-                if (!rol.isPermisoCrearProceso()) throw new com.edu.javeriana.backend.exception.BusinessRuleException("Tu rol en este pool no permite CREAR procesos");
+                if (!rol.isPermisoCrearProceso())
+                    throw new com.edu.javeriana.backend.exception.BusinessRuleException(
+                            "Tu rol en este pool no permite CREAR procesos");
             }
             case "EDITAR" -> {
-                if (!rol.isPermisoEditarProceso()) throw new com.edu.javeriana.backend.exception.BusinessRuleException("Tu rol en este pool no permite EDITAR procesos");
+                if (!rol.isPermisoEditarProceso())
+                    throw new com.edu.javeriana.backend.exception.BusinessRuleException(
+                            "Tu rol en este pool no permite EDITAR procesos");
             }
             case "ELIMINAR" -> {
-                if (!rol.isPermisoEliminarProceso()) throw new com.edu.javeriana.backend.exception.BusinessRuleException("Tu rol en este pool no permite ELIMINAR procesos");
+                if (!rol.isPermisoEliminarProceso())
+                    throw new com.edu.javeriana.backend.exception.BusinessRuleException(
+                            "Tu rol en este pool no permite ELIMINAR procesos");
             }
             case "PUBLICAR" -> {
-                if (!rol.isPermisoPublicarProceso()) throw new com.edu.javeriana.backend.exception.BusinessRuleException("Tu rol en este pool no permite PUBLICAR procesos");
+                if (!rol.isPermisoPublicarProceso())
+                    throw new com.edu.javeriana.backend.exception.BusinessRuleException(
+                            "Tu rol en este pool no permite PUBLICAR procesos");
             }
         }
     }

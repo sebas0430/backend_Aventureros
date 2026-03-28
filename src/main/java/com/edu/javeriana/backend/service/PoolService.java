@@ -1,5 +1,7 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.service.interfaces.*;
+
 import com.edu.javeriana.backend.dto.PoolEdicionDTO;
 import com.edu.javeriana.backend.dto.PoolRegistroDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
@@ -29,11 +31,9 @@ public class PoolService implements IPoolService {
     @Override
     @Transactional
     public Pool crearPool(PoolRegistroDTO dto) {
-        // Validar empresa
         Empresa empresa = empresaRepository.findById(dto.getEmpresaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada"));
 
-        // Validar que el usuario existe, es ADMIN y pertenece a la empresa
         validarUsuarioAdministradorDeEmpresa(dto.getUsuarioId(), empresa.getId());
 
         Pool pool = Pool.builder()
@@ -44,7 +44,6 @@ public class PoolService implements IPoolService {
 
         Pool guardado = poolRepository.save(pool);
 
-        // Auditoría
         log.info("AUDITORIA: Usuario {} (ADMIN) registró el Nuevo Pool '{}' (ID={}) para la Empresa ID={}",
                 dto.getUsuarioId(), guardado.getNombre(), guardado.getId(), empresa.getId());
 
@@ -64,11 +63,17 @@ public class PoolService implements IPoolService {
 
         Pool actualizado = poolRepository.save(pool);
 
-        // Auditoría
         log.info("AUDITORIA: Usuario {} (ADMIN) actualizó el Pool ID={} (Nuevo Nombre: '{}')",
                 dto.getUsuarioId(), actualizado.getId(), actualizado.getNombre());
 
         return actualizado;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Pool obtenerPoolPorId(Long id) {
+        return poolRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Pool no encontrado"));
     }
 
     @Override
@@ -78,9 +83,6 @@ public class PoolService implements IPoolService {
                 .orElseThrow(() -> new ResourceNotFoundException("Pool no encontrado"));
 
         validarUsuarioAdministradorDeEmpresa(usuarioId, pool.getEmpresa().getId());
-
-        // Aseguraremos que no deje procesos huerfanos,
-        // JPA se encarga del cascade si lo mapeamos en @OneToMany o levanta un error si decidimos que no
         poolRepository.delete(pool);
     }
 
@@ -93,10 +95,6 @@ public class PoolService implements IPoolService {
         return poolRepository.findByEmpresaId(empresaId);
     }
 
-    /**
-     * Asegura que el usuario solicitante es un administrador
-     * y, ademas, pertenece a la empresa sobre la cual administra (evitar que admin de otra empresa acceda).
-     */
     private void validarUsuarioAdministradorDeEmpresa(Long usuarioId, Long empresaId) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
@@ -108,5 +106,11 @@ public class PoolService implements IPoolService {
         if (!usuario.getEmpresa().getId().equals(empresaId)) {
             throw new BusinessRuleException("No perteneces a la empresa de la cual intentas modificar el pool");
         }
+    }
+
+    @Override
+    @Transactional
+    public Pool guardarPool(Pool pool) {
+        return poolRepository.save(pool);
     }
 }

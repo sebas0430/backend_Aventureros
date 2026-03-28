@@ -1,5 +1,7 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.service.interfaces.*;
+
 import com.edu.javeriana.backend.dto.LaneEdicionDTO;
 import com.edu.javeriana.backend.dto.LaneRegistroDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
@@ -8,10 +10,9 @@ import com.edu.javeriana.backend.model.Lane;
 import com.edu.javeriana.backend.model.Pool;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.LaneRepository;
-import com.edu.javeriana.backend.repository.PoolRepository;
-import com.edu.javeriana.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,14 +24,13 @@ import java.util.List;
 public class LaneService implements ILaneService {
 
     private final LaneRepository laneRepository;
-    private final PoolRepository poolRepository;
-    private final UsuarioRepository usuarioRepository;
+    private final @Lazy IPoolService poolService;
+    private final @Lazy IUsuarioService usuarioService;
 
     @Override
     @Transactional
     public Lane crearLane(LaneRegistroDTO dto) {
-        Pool pool = poolRepository.findById(dto.getPoolId())
-                .orElseThrow(() -> new ResourceNotFoundException("Pool no encontrado"));
+        Pool pool = poolService.obtenerPoolPorId(dto.getPoolId());
 
         validarAccesoYManejoDeLane(dto.getUsuarioId(), pool.getEmpresa().getId(), true);
 
@@ -41,7 +41,7 @@ public class LaneService implements ILaneService {
                 .build();
 
         Lane laneGuardado = laneRepository.save(lane);
-        
+
         log.info("AUDITORIA: Usuario {} (ADMIN) registró el Nuevo Lane '{}' (ID={}) dentro del Pool ID={}",
                 dto.getUsuarioId(), laneGuardado.getNombre(), laneGuardado.getId(), pool.getId());
 
@@ -75,39 +75,32 @@ public class LaneService implements ILaneService {
 
         validarAccesoYManejoDeLane(usuarioId, lane.getPool().getEmpresa().getId(), true);
 
-        // NOTA: En el futuro si este Lane tiene Actividades, validar cascading o limpieza.
         laneRepository.delete(lane);
-        
+
         log.info("AUDITORIA: Usuario {} (ADMIN) eliminó el Lane ID={}", usuarioId, id);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Lane> listarLanesPorPool(Long poolId, Long usuarioId) {
-        Pool pool = poolRepository.findById(poolId)
-                .orElseThrow(() -> new ResourceNotFoundException("Pool no encontrado"));
+        Pool pool = poolService.obtenerPoolPorId(poolId);
 
-        // Se verifica que el usuario pertenece a la empresa de la cual quiere ver el pool/lanes (Visibilidad separada por multiempresa)
         validarAccesoYManejoDeLane(usuarioId, pool.getEmpresa().getId(), false);
 
         return laneRepository.findByPoolId(poolId);
     }
 
-    /**
-     * Valida permisos para operaciones de un Lane basadas en el Pool que lo envuelve.
-     */
     private void validarAccesoYManejoDeLane(Long usuarioId, Long empresaPoolId, boolean requiresAdmin) {
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Usuario usuario = usuarioService.obtenerUsuarioPorId(usuarioId);
 
-        // Regla 1: Validar multitenancy (pertenencía de la empresa)
         if (!usuario.getEmpresa().getId().equals(empresaPoolId)) {
-            throw new BusinessRuleException("No perteneces a la empresa de la cual intentas consultar o modificar este Lane");
+            throw new BusinessRuleException(
+                    "No perteneces a la empresa de la cual intentas consultar o modificar este Lane");
         }
 
-        // Regla 2: ¿Requiere privilegios de ADMIN para creacion/edicion?
         if (requiresAdmin && !"ADMINISTRADOR_EMPRESA".equals(usuario.getRol())) {
-            throw new BusinessRuleException("No tienes el rol de ADMINISTRADOR_EMPRESA para modificar los Lanes (roles/departamentos) de los pools");
+            throw new BusinessRuleException(
+                    "No tienes el rol de ADMINISTRADOR_EMPRESA para modificar los Lanes (roles/departamentos) de los pools");
         }
     }
 }
