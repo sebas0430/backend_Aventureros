@@ -2,7 +2,7 @@ package com.edu.javeriana.backend.controller;
 
 import com.edu.javeriana.backend.dto.UsuarioRegistroDTO;
 import com.edu.javeriana.backend.model.Usuario;
-import com.edu.javeriana.backend.service.IUsuarioService;
+import com.edu.javeriana.backend.service.interfaces.IUsuarioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

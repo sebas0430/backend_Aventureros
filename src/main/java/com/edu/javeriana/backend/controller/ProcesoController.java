@@ -2,7 +2,7 @@ package com.edu.javeriana.backend.controller;
 
 import com.edu.javeriana.backend.dto.ProcesoRegistroDTO;
 import com.edu.javeriana.backend.model.Proceso;
-import com.edu.javeriana.backend.service.IProcesoService;
+import com.edu.javeriana.backend.service.interfaces.IProcesoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

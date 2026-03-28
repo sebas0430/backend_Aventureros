@@ -3,7 +3,7 @@ package com.edu.javeriana.backend.controller;
 import com.edu.javeriana.backend.dto.LaneEdicionDTO;
 import com.edu.javeriana.backend.dto.LaneRegistroDTO;
 import com.edu.javeriana.backend.model.Lane;
-import com.edu.javeriana.backend.service.ILaneService;
+import com.edu.javeriana.backend.service.interfaces.ILaneService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

@@ -1,7 +1,7 @@
 package com.edu.javeriana.backend.controller;
 
 import com.edu.javeriana.backend.model.Documento;
-import com.edu.javeriana.backend.service.IDocumentoService;
+import com.edu.javeriana.backend.service.interfaces.IDocumentoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

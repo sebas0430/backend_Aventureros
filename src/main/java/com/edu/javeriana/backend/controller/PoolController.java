@@ -3,7 +3,7 @@ package com.edu.javeriana.backend.controller;
 import com.edu.javeriana.backend.dto.PoolEdicionDTO;
 import com.edu.javeriana.backend.dto.PoolRegistroDTO;
 import com.edu.javeriana.backend.model.Pool;
-import com.edu.javeriana.backend.service.IPoolService;
+import com.edu.javeriana.backend.service.interfaces.IPoolService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

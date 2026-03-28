@@ -19,7 +19,7 @@ import com.edu.javeriana.backend.dto.ActividadRegistroDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
 import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.model.Actividad;
-import com.edu.javeriana.backend.service.IActividadService;
+import com.edu.javeriana.backend.service.interfaces.IActividadService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
