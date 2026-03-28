@@ -1,5 +1,7 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.service.interfaces.*;
+
 import com.edu.javeriana.backend.dto.ConectorExternoRegistroDTO;
 import com.edu.javeriana.backend.dto.EnvioExternoDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
@@ -8,6 +10,7 @@ import com.edu.javeriana.backend.model.*;
 import com.edu.javeriana.backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,17 +23,14 @@ public class NotificacionExternaService implements INotificacionExternaService {
 
     private final ConectorExternoRepository conectorExternoRepository;
     private final NotificacionExternaRepository notificacionExternaRepository;
-    private final EmpresaRepository empresaRepository;
-    private final ProcesoRepository procesoRepository;
-    private final UsuarioRepository usuarioRepository;
-
-    // ===================== Gestión de Conectores =====================
+    private final @Lazy IEmpresaService empresaService;
+    private final @Lazy IProcesoService procesoService;
+    private final @Lazy IUsuarioService usuarioService;
 
     @Override
     @Transactional
     public ConectorExterno crearConector(ConectorExternoRegistroDTO dto) {
-        Empresa empresa = empresaRepository.findById(dto.getEmpresaId())
-                .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada"));
+        Empresa empresa = empresaService.obtenerEmpresaPorId(dto.getEmpresaId());
 
         validarAdminEmpresa(dto.getUsuarioId(), empresa.getId());
 
@@ -67,7 +67,8 @@ public class NotificacionExternaService implements INotificacionExternaService {
         conector.setCredencialRef(dto.getCredencialRef());
         conector.setUsuarioAuth(dto.getUsuarioAuth());
         conector.setHeadersJson(dto.getHeadersJson());
-        if (dto.getMaxReintentos() > 0) conector.setMaxReintentos(dto.getMaxReintentos());
+        if (dto.getMaxReintentos() > 0)
+            conector.setMaxReintentos(dto.getMaxReintentos());
 
         log.info("AUDITORIA: Usuario {} editó conector externo ID={}", dto.getUsuarioId(), id);
         return conectorExternoRepository.save(conector);
@@ -91,7 +92,24 @@ public class NotificacionExternaService implements INotificacionExternaService {
         return conectorExternoRepository.findByEmpresaId(empresaId);
     }
 
-    // ===================== Envío de Mensajes =====================
+    @Override
+    @Transactional(readOnly = true)
+    public boolean validarCredencialExterna(String token, Long empresaId) {
+        if (token == null || token.isBlank()) {
+            return false;
+        }
+
+        List<ConectorExterno> conectores = conectorExternoRepository.findByEmpresaIdAndActivo(empresaId, true);
+
+        for (ConectorExterno conector : conectores) {
+            if (conector.getCredencialRef() != null && conector.getCredencialRef().equals(token)) {
+                log.info("SEGURIDAD: Token externo validado exitosamente contra conector '{}'", conector.getNombre());
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     @Override
     @Transactional
@@ -99,13 +117,10 @@ public class NotificacionExternaService implements INotificacionExternaService {
         ConectorExterno conector = conectorExternoRepository.findById(dto.getConectorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Conector externo no encontrado"));
 
-        Proceso proceso = procesoRepository.findById(dto.getProcesoId())
-                .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado"));
+        Proceso proceso = procesoService.obtenerProcesoPorId(dto.getProcesoId());
 
-        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Usuario usuario = usuarioService.obtenerUsuarioPorId(dto.getUsuarioId());
 
-        // Verificar que conector y proceso pertenecen a la misma empresa
         if (!conector.getEmpresa().getId().equals(proceso.getEmpresa().getId())) {
             throw new BusinessRuleException("El conector y el proceso no pertenecen a la misma empresa.");
         }
@@ -114,7 +129,6 @@ public class NotificacionExternaService implements INotificacionExternaService {
             throw new BusinessRuleException("El conector está deshabilitado.");
         }
 
-        // Simular/delegar el envío al adaptador correspondiente
         NotificacionExterna notificacion = NotificacionExterna.builder()
                 .conector(conector)
                 .proceso(proceso)
@@ -124,7 +138,6 @@ public class NotificacionExternaService implements INotificacionExternaService {
 
         notificacion = notificacionExternaRepository.save(notificacion);
 
-        // Despachar al adaptador por tipo
         try {
             String respuesta = despacharAlAdaptador(conector, dto.getPayload());
             notificacion.setEstado(EstadoEnvioExterno.ENVIADO);
@@ -139,8 +152,9 @@ public class NotificacionExternaService implements INotificacionExternaService {
 
             if (notificacion.getIntentosRealizados() < conector.getMaxReintentos()) {
                 notificacion.setEstado(EstadoEnvioExterno.REINTENTANDO);
-                notificacion.setDetalleError("Intento " + notificacion.getIntentosRealizados() + " fallido: " + e.getMessage());
-                log.warn("AUDITORIA: Notificación ID={} falló, reintentando ({}/{})", 
+                notificacion.setDetalleError(
+                        "Intento " + notificacion.getIntentosRealizados() + " fallido: " + e.getMessage());
+                log.warn("AUDITORIA: Notificación ID={} falló, reintentando ({}/{})",
                         notificacion.getId(), notificacion.getIntentosRealizados(), conector.getMaxReintentos());
             } else {
                 notificacion.setEstado(EstadoEnvioExterno.ERROR);
@@ -152,8 +166,6 @@ public class NotificacionExternaService implements INotificacionExternaService {
 
         return notificacionExternaRepository.save(notificacion);
     }
-
-    // ===================== Logs =====================
 
     @Override
     @Transactional(readOnly = true)
@@ -167,12 +179,6 @@ public class NotificacionExternaService implements INotificacionExternaService {
         return notificacionExternaRepository.findByConectorId(conectorId);
     }
 
-    // ===================== Adaptadores =====================
-
-    /**
-     * Despacha al adaptador correcto según el tipo de conector.
-     * En una implementación real, cada tipo tendría su propio bean @Component.
-     */
     private String despacharAlAdaptador(ConectorExterno conector, String payload) {
         return switch (conector.getTipo()) {
             case EMAIL -> adaptadorEmail(conector, payload);
@@ -181,35 +187,26 @@ public class NotificacionExternaService implements INotificacionExternaService {
         };
     }
 
-    /** Adaptador EMAIL: simula envío SMTP */
     private String adaptadorEmail(ConectorExterno conector, String payload) {
         log.info("[ADAPTADOR EMAIL] Enviando a host={}, puerto={}, usuario={}, payload={}",
                 conector.getDestino(), conector.getPuerto(), conector.getUsuarioAuth(), payload);
-        // NOTA: Integrar con JavaMailSender real en producción
         return "EMAIL_OK: Simulado exitosamente hacia " + conector.getDestino();
     }
 
-    /** Adaptador WEBHOOK: simula POST HTTP */
     private String adaptadorWebhook(ConectorExterno conector, String payload) {
         log.info("[ADAPTADOR WEBHOOK] POST a URL={}, headers={}, payload={}",
                 conector.getDestino(), conector.getHeadersJson(), payload);
-        // NOTA: Integrar con RestTemplate o WebClient real en producción
         return "WEBHOOK_OK: Simulado exitosamente hacia " + conector.getDestino();
     }
 
-    /** Adaptador QUEUE: simula envío a cola de mensajes */
     private String adaptadorQueue(ConectorExterno conector, String payload) {
         log.info("[ADAPTADOR QUEUE] Publicando en broker={}, puerto={}, payload={}",
                 conector.getDestino(), conector.getPuerto(), payload);
-        // NOTA: Integrar con JmsTemplate, RabbitTemplate o KafkaTemplate en producción
         return "QUEUE_OK: Simulado exitosamente hacia " + conector.getDestino();
     }
 
-    // ===================== Helpers =====================
-
     private void validarAdminEmpresa(Long usuarioId, Long empresaId) {
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Usuario usuario = usuarioService.obtenerUsuarioPorId(usuarioId);
 
         if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol()) || !usuario.getEmpresa().getId().equals(empresaId)) {
             throw new BusinessRuleException("Solo un administrador de la empresa puede gestionar conectores externos.");
