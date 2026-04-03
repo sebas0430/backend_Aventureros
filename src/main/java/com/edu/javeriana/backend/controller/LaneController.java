@@ -21,37 +21,50 @@ public class LaneController {
     private final ILaneService laneService;
 
     @PostMapping
-    public ResponseEntity<?> crearLane(@Valid @RequestBody LaneRegistroDTO dto) {
+    public ResponseEntity<LaneRegistroDTO> crearLane(@Valid @RequestBody LaneRegistroDTO dto) {
         Lane lane = laneService.crearLane(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                "id", lane.getId(),
-                "nombre", lane.getNombre(),
-                "poolId", lane.getPool().getId(),
-                "mensaje", "Lane (Swimlane) creado exitosamente"
-        ));
+        LaneRegistroDTO respuesta = new LaneRegistroDTO();
+        respuesta.setNombre(lane.getNombre());
+        respuesta.setDescripcion(lane.getDescripcion());
+        respuesta.setPoolId(lane.getPool().getId());
+        respuesta.setUsuarioId(dto.getUsuarioId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> editarLane(@PathVariable Long id, @Valid @RequestBody LaneEdicionDTO dto) {
+    public ResponseEntity<LaneEdicionDTO> editarLane(
+            @PathVariable Long id,
+            @Valid @RequestBody LaneEdicionDTO dto) {
         Lane lane = laneService.editarLane(id, dto);
-        return ResponseEntity.ok(Map.of(
-                "id", lane.getId(),
-                "nombre", lane.getNombre(),
-                "poolId", lane.getPool().getId(),
-                "mensaje", "Lane editado exitosamente"
-        ));
+        LaneEdicionDTO respuesta = new LaneEdicionDTO();
+        respuesta.setNombre(lane.getNombre());
+        respuesta.setDescripcion(lane.getDescripcion());
+        respuesta.setUsuarioId(dto.getUsuarioId());
+        return ResponseEntity.ok(respuesta);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminarLane(@PathVariable Long id, @RequestParam Long usuarioId) {
+    public ResponseEntity<Void> eliminarLane(
+            @PathVariable Long id,
+            @RequestParam Long usuarioId) {
         laneService.eliminarLane(id, usuarioId);
-        return ResponseEntity.ok(Map.of("mensaje", "Lane eliminado exitosamente"));
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/pool/{poolId}")
-    public ResponseEntity<List<Lane>> listarLanesPorPool(
-            @PathVariable Long poolId, 
+    public ResponseEntity<List<LaneRegistroDTO>> listarLanesPorPool(
+            @PathVariable Long poolId,
             @RequestParam Long usuarioId) {
-        return ResponseEntity.ok(laneService.listarLanesPorPool(poolId, usuarioId));
+        List<LaneRegistroDTO> respuesta = laneService.listarLanesPorPool(poolId, usuarioId)
+                .stream() // Convertimos cada Lane a LaneRegistroDTO para la respuesta 
+                .map(lane -> {
+                    LaneRegistroDTO dto = new LaneRegistroDTO(); // No se incluye el ID del usuario en la respuesta, ya que no es relevante para el cliente
+                    dto.setNombre(lane.getNombre());
+                    dto.setDescripcion(lane.getDescripcion());
+                    dto.setPoolId(lane.getPool().getId());
+                    return dto; //
+                })
+                .toList(); // Convertimos el Stream de LaneRegistroDTO a List<LaneRegistroDTO>
+        return ResponseEntity.ok(respuesta); // Devolvemos la lista de LaneRegistroDTO como respuesta
     }
 }
