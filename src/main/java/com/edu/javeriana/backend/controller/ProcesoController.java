@@ -21,17 +21,15 @@ public class ProcesoController {
 
     // POST /api/procesos
     @PostMapping
-    public ResponseEntity<?> crearProceso(@Valid @RequestBody ProcesoRegistroDTO dto) {
-        try {
-            Proceso proceso = procesoService.crearProceso(dto);
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                    "id", proceso.getId(),
-                    "nombre", proceso.getNombre(),
-                    "updatedAt", proceso.getUpdatedAt(),
-                    "mensaje", "Proceso creado exitosamente"));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<ProcesoRegistroDTO> crearProceso(@Valid @RequestBody ProcesoRegistroDTO dto) {
+        Proceso proceso = procesoService.crearProceso(dto);
+        ProcesoRegistroDTO respuesta = new ProcesoRegistroDTO();
+        respuesta.setNombre(proceso.getNombre());
+        respuesta.setDescripcion(proceso.getDescripcion());
+        respuesta.setCategoria(proceso.getCategoria());
+        respuesta.setEmpresaId(proceso.getAutor().getEmpresa().getId());
+        respuesta.setAutorId(proceso.getAutor().getId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
     }
 
     // GET /api/procesos/empresa/{empresaId}

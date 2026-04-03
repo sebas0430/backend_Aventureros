@@ -18,23 +18,17 @@ public class MessageCatchController {
 
     private final IMessageCatchService messageCatchService;
 
-    /**
-     * Endpoint para recibir un mensaje (interno o externo) y activar/continuar
-     * procesos que tengan un CATCH esperando con ese nombre de mensaje.
-     */
+    //Endpoint para recibir un mensaje (interno o externo) y activar/continuar procesos que tengan un CATCH esperando con ese nombre de mensaje.
+
     @PostMapping("/recibir")
-    public ResponseEntity<?> recibirMensaje(@Valid @RequestBody MensajeCatchDTO dto) {
+    public ResponseEntity<MensajeCatchDTO> recibirMensaje(@Valid @RequestBody MensajeCatchDTO dto) {
         try {
-            List<RecepcionMensaje> recepciones = messageCatchService.recibirMensaje(dto);
-            return ResponseEntity.ok(Map.of(
-                    "mensaje", "Mensaje recibido y procesado exitosamente",
-                    "catchesActivados", recepciones.size(),
-                    "recepciones", recepciones
-            ));
+            messageCatchService.recibirMensaje(dto);
+            return ResponseEntity.ok(dto);
         } catch (com.edu.javeriana.backend.exception.BusinessRuleException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().build();
         } catch (com.edu.javeriana.backend.exception.ResourceNotFoundException e) {
-            return ResponseEntity.status(404).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(404).build();
         }
     }
 

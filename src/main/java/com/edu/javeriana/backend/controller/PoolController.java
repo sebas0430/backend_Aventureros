@@ -21,31 +21,32 @@ public class PoolController {
     private final IPoolService poolService;
 
     @PostMapping
-    public ResponseEntity<?> crearPool(@Valid @RequestBody PoolRegistroDTO dto) {
+    public ResponseEntity<PoolRegistroDTO> crearPool(@Valid @RequestBody PoolRegistroDTO dto) {
         Pool pool = poolService.crearPool(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                "id", pool.getId(),
-                "nombre", pool.getNombre(),
-                "empresaId", pool.getEmpresa().getId(),
-                "mensaje", "Pool creado exitosamente"
-        ));
+        PoolRegistroDTO respuesta = new PoolRegistroDTO();
+        respuesta.setNombre(pool.getNombre());
+        respuesta.setDescripcion(pool.getDescripcion());
+        respuesta.setEmpresaId(pool.getEmpresa().getId());
+        respuesta.setUsuarioId(dto.getUsuarioId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> editarPool(@PathVariable Long id, @Valid @RequestBody PoolEdicionDTO dto) {
+    public ResponseEntity<PoolEdicionDTO> editarPool(
+            @PathVariable Long id,
+            @Valid @RequestBody PoolEdicionDTO dto) {
         Pool pool = poolService.editarPool(id, dto);
-        return ResponseEntity.ok(Map.of(
-                "id", pool.getId(),
-                "nombre", pool.getNombre(),
-                "empresaId", pool.getEmpresa().getId(),
-                "mensaje", "Pool editado exitosamente"
-        ));
+        PoolEdicionDTO respuesta = new PoolEdicionDTO();
+        respuesta.setNombre(pool.getNombre());
+        respuesta.setDescripcion(pool.getDescripcion());
+        respuesta.setUsuarioId(dto.getUsuarioId());
+        return ResponseEntity.ok(respuesta);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminarPool(@PathVariable Long id, @RequestParam Long usuarioId) {
+    public ResponseEntity<Void> eliminarPool(@PathVariable Long id, @RequestParam Long usuarioId) {
         poolService.eliminarPool(id, usuarioId);
-        return ResponseEntity.ok(Map.of("mensaje", "Pool eliminado exitosamente"));
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/empresa/{empresaId}")
