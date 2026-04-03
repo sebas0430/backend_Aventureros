@@ -2,6 +2,8 @@ package com.edu.javeriana.backend.controller;
 
 import com.edu.javeriana.backend.dto.AsignacionRolDTO;
 import com.edu.javeriana.backend.dto.RolPoolRegistroDTO;
+import com.edu.javeriana.backend.exception.BusinessRuleException;
+import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.model.AsignacionRolPool;
 import com.edu.javeriana.backend.model.RolPool;
 import com.edu.javeriana.backend.service.IRolPoolService;
@@ -23,29 +25,58 @@ public class RolPoolController {
 
     @PostMapping
     public ResponseEntity<?> crearRol(@Valid @RequestBody RolPoolRegistroDTO dto) {
-        RolPool rol = rolPoolService.crearRol(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                "id", rol.getId(),
-                "nombre", rol.getNombre(),
-                "poolId", rol.getPool().getId(),
-                "mensaje", "Rol de pool creado exitosamente"
-        ));
+        try {
+            RolPool rol = rolPoolService.crearRol(dto);
+            RolPoolRegistroDTO respuesta = new RolPoolRegistroDTO();
+            respuesta.setNombre(rol.getNombre());
+            respuesta.setDescripcion(rol.getDescripcion());
+            respuesta.setPoolId(rol.getPool().getId());
+            respuesta.setPermisoCrearProceso(rol.isPermisoCrearProceso());
+            respuesta.setPermisoEditarProceso(rol.isPermisoEditarProceso());
+            respuesta.setPermisoEliminarProceso(rol.isPermisoEliminarProceso());
+            respuesta.setPermisoPublicarProceso(rol.isPermisoPublicarProceso());
+            respuesta.setPermisoGestionarRoles(rol.isPermisoGestionarRoles());
+            respuesta.setUsuarioId(dto.getUsuarioId());
+            return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
+        } catch (BusinessRuleException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> editarRol(@PathVariable Long id, @Valid @RequestBody RolPoolRegistroDTO dto) {
-        RolPool rol = rolPoolService.editarRol(id, dto);
-        return ResponseEntity.ok(Map.of(
-                "id", rol.getId(),
-                "nombre", rol.getNombre(),
-                "mensaje", "Rol actualizado exitosamente"
-        ));
+        try {
+            RolPool rol = rolPoolService.editarRol(id, dto);
+            RolPoolRegistroDTO respuesta = new RolPoolRegistroDTO();
+            respuesta.setNombre(rol.getNombre());
+            respuesta.setDescripcion(rol.getDescripcion());
+            respuesta.setPoolId(rol.getPool().getId());
+            respuesta.setPermisoCrearProceso(rol.isPermisoCrearProceso());
+            respuesta.setPermisoEditarProceso(rol.isPermisoEditarProceso());
+            respuesta.setPermisoEliminarProceso(rol.isPermisoEliminarProceso());
+            respuesta.setPermisoPublicarProceso(rol.isPermisoPublicarProceso());
+            respuesta.setPermisoGestionarRoles(rol.isPermisoGestionarRoles());
+            respuesta.setUsuarioId(dto.getUsuarioId());
+            return ResponseEntity.ok(respuesta);
+        } catch (BusinessRuleException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminarRol(@PathVariable Long id, @RequestParam Long usuarioSolicitanteId) {
-        rolPoolService.eliminarRol(id, usuarioSolicitanteId);
-        return ResponseEntity.ok(Map.of("mensaje", "Rol eliminado exitosamente"));
+        try {
+            rolPoolService.eliminarRol(id, usuarioSolicitanteId);
+            return ResponseEntity.ok("Rol eliminado exitosamente");
+        } catch (BusinessRuleException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     @GetMapping("/pool/{poolId}")
@@ -55,14 +86,19 @@ public class RolPoolController {
 
     @PostMapping("/asignar")
     public ResponseEntity<?> asignarRolAUsuario(@Valid @RequestBody AsignacionRolDTO dto) {
-        AsignacionRolPool asignacion = rolPoolService.asignarRolAUsuario(dto);
-        return ResponseEntity.ok(Map.of(
-                "id", asignacion.getId(),
-                "usuarioId", asignacion.getUsuario().getId(),
-                "rolNombre", asignacion.getRol().getNombre(),
-                "poolId", asignacion.getPool().getId(),
-                "mensaje", "Rol asignado correctamente"
-        ));
+        try {
+            AsignacionRolPool asignacion = rolPoolService.asignarRolAUsuario(dto);
+            AsignacionRolDTO respuesta = new AsignacionRolDTO();
+            respuesta.setUsuarioDestinoId(asignacion.getUsuario().getId());
+            respuesta.setRolPoolId(asignacion.getRol().getId());
+            respuesta.setPoolId(asignacion.getPool().getId());
+            respuesta.setUsuarioId(dto.getUsuarioId());
+            return ResponseEntity.ok(respuesta);
+        } catch (BusinessRuleException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     @DeleteMapping("/desasignar")
@@ -70,16 +106,26 @@ public class RolPoolController {
             @RequestParam Long usuarioDestinoId,
             @RequestParam Long poolId,
             @RequestParam Long usuarioId) {
-        rolPoolService.desasignarRolAUsuario(usuarioDestinoId, poolId, usuarioId);
-        return ResponseEntity.ok(Map.of("mensaje", "Rol desasignado correctamente"));
+        try {
+            rolPoolService.desasignarRolAUsuario(usuarioDestinoId, poolId, usuarioId);
+            return ResponseEntity.ok("Rol desasignado correctamente");
+        } catch (BusinessRuleException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     @GetMapping("/usuario/{usuarioDestinoId}/pool/{poolId}")
     public ResponseEntity<?> obtenerRolDeUsuario(@PathVariable Long usuarioDestinoId, @PathVariable Long poolId) {
-        AsignacionRolPool asignacion = rolPoolService.obtenerAsignacionUsuario(usuarioDestinoId, poolId);
-        if (asignacion == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("mensaje", "El usuario no tiene ningún rol asignado en este pool"));
+        try {
+            AsignacionRolPool asignacion = rolPoolService.obtenerAsignacionUsuario(usuarioDestinoId, poolId);
+            if (asignacion == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("El usuario no tiene ningún rol asignado en este pool");
+            }
+            return ResponseEntity.ok(asignacion.getRol());
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
-        return ResponseEntity.ok(asignacion.getRol());
     }
 }

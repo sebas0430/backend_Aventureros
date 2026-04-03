@@ -1,6 +1,8 @@
 package com.edu.javeriana.backend.controller;
 
+import com.edu.javeriana.backend.dto.ProcesoEdicionDTO;
 import com.edu.javeriana.backend.dto.ProcesoRegistroDTO;
+import com.edu.javeriana.backend.model.EstadoProceso;
 import com.edu.javeriana.backend.model.Proceso;
 import com.edu.javeriana.backend.service.IProcesoService;
 import jakarta.validation.Valid;
@@ -66,19 +68,16 @@ public class ProcesoController {
 
     // PATCH /api/procesos/{id}/definicion
     @PatchMapping("/{id}/definicion")
-    public ResponseEntity<?> actualizarDefinicion(
+    public ResponseEntity<ProcesoEdicionDTO> actualizarDefinicion(
             @PathVariable Long id,
             @RequestBody Map<String, String> body) {
-        try {
-            String definicionJson = body.get("definicionJson");
-            Proceso actualizado = procesoService.actualizarDefinicion(id, definicionJson);
-            return ResponseEntity.ok(Map.of(
-                    "id", actualizado.getId(),
-                    "updatedAt", actualizado.getUpdatedAt(),
-                    "mensaje", "Definición actualizada exitosamente"));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        String definicionJson = body.get("definicionJson");
+        Proceso actualizado = procesoService.actualizarDefinicion(id, definicionJson);
+        ProcesoEdicionDTO respuesta = new ProcesoEdicionDTO();
+        respuesta.setNombre(actualizado.getNombre());
+        respuesta.setDescripcion(actualizado.getDescripcion());
+        respuesta.setCategoria(actualizado.getCategoria());
+        return ResponseEntity.ok(respuesta);
     }
 
     // PUT /api/procesos/{id}
@@ -88,13 +87,12 @@ public class ProcesoController {
             @Valid @RequestBody com.edu.javeriana.backend.dto.ProcesoEdicionDTO dto) {
         try {
             Proceso actualizado = procesoService.editarProceso(id, dto);
-            return ResponseEntity.ok(Map.of(
-                    "id", actualizado.getId(),
-                    "nombre", actualizado.getNombre(),
-                    "descripcion", actualizado.getDescripcion(),
-                    "categoria", actualizado.getCategoria(),
-                    "updatedAt", actualizado.getUpdatedAt(),
-                    "mensaje", "Proceso editado exitosamente"));
+            ProcesoEdicionDTO respuesta = new ProcesoEdicionDTO();
+            respuesta.setNombre(actualizado.getNombre());
+            respuesta.setDescripcion(actualizado.getDescripcion());
+            respuesta.setCategoria(actualizado.getCategoria());
+            respuesta.setUsuarioId(dto.getUsuarioId());
+            return ResponseEntity.ok(respuesta);
         } catch (com.edu.javeriana.backend.exception.BusinessRuleException | IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (com.edu.javeriana.backend.exception.ResourceNotFoundException e) {
@@ -117,20 +115,18 @@ public class ProcesoController {
 
     // PATCH /api/procesos/{id}/estado
     @PatchMapping("/{id}/estado")
-    public ResponseEntity<?> cambiarEstado(
+    public ResponseEntity<ProcesoEdicionDTO> cambiarEstado(
             @PathVariable Long id,
             @RequestBody Map<String, Object> body) {
-
-        com.edu.javeriana.backend.model.EstadoProceso nuevoEstado = com.edu.javeriana.backend.model.EstadoProceso
-                .valueOf((String) body.get("estado"));
+        EstadoProceso nuevoEstado = EstadoProceso.valueOf((String) body.get("estado"));
         Long usuarioId = ((Number) body.get("usuarioId")).longValue();
-
         Proceso actualizado = procesoService.cambiarEstado(id, nuevoEstado, usuarioId);
-
-        return ResponseEntity.ok(Map.of(
-                "id", actualizado.getId(),
-                "estado", actualizado.getEstado(),
-                "mensaje", "Estado de proceso actualizado exitosamente"));
+        ProcesoEdicionDTO respuesta = new ProcesoEdicionDTO();
+        respuesta.setNombre(actualizado.getNombre());
+        respuesta.setDescripcion(actualizado.getDescripcion());
+        respuesta.setCategoria(actualizado.getCategoria());
+        respuesta.setUsuarioId(usuarioId);
+        return ResponseEntity.ok(respuesta);
     }
 
     // POST /api/procesos/{id}/compartir
