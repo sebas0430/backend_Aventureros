@@ -7,6 +7,7 @@ import com.edu.javeriana.backend.model.Documento;
 import com.edu.javeriana.backend.model.Proceso;
 import com.edu.javeriana.backend.repository.DocumentoRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class DocumentoService implements IDocumentoService {
 
     private final DocumentoRepository documentoRepository;
@@ -62,7 +64,9 @@ public class DocumentoService implements IDocumentoService {
             documento.setTipoContenido(archivo.getContentType());
             documento.setProceso(proceso);
 
-            return documentoRepository.save(documento);
+            Documento guardado = documentoRepository.save(documento);
+            log.info("Documento {} subido exitosamente al proceso {}", nombreOriginal, procesoId);
+            return guardado;
 
         } catch (IOException e) {
             throw new RuntimeException("Error al guardar el archivo", e);
@@ -88,6 +92,7 @@ public class DocumentoService implements IDocumentoService {
             Path filePath = Paths.get(documento.getRutaArchivo());
             Files.deleteIfExists(filePath);
             documentoRepository.delete(documento);
+            log.info("Documento {} eliminado exitosamente", documentoId);
         } catch (IOException e) {
             throw new RuntimeException("Error al eliminar el archivo físico", e);
         }

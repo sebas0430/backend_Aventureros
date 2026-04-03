@@ -12,6 +12,8 @@ import com.edu.javeriana.backend.model.TipoNodo;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.ArcoRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +22,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j  
 public class ArcoService implements IArcoService {
 
     private final ArcoRepository arcoRepository;
@@ -57,6 +60,8 @@ public class ArcoService implements IArcoService {
                 .destinoTipo(destinoTipo)
                 .etiqueta(dto.getEtiqueta())
                 .build();
+
+        log.info("Arco creado en proceso {}", proceso.getId());
 
         return arcoRepository.save(arco);
     }
@@ -124,6 +129,8 @@ public class ArcoService implements IArcoService {
         Arco arco = arcoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Arco no encontrado"));
         arcoRepository.delete(arco);
+        
+        log.info("Arco {} eliminado", id);
     }
 
     @Override

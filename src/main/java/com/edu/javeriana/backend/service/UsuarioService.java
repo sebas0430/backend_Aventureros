@@ -9,11 +9,13 @@ import com.edu.javeriana.backend.repository.EmpresaRepository;
 import com.edu.javeriana.backend.repository.UsuarioRepository;
 import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UsuarioService implements IUsuarioService {
 
     private final UsuarioRepository usuarioRepository;
@@ -46,6 +48,8 @@ public class UsuarioService implements IUsuarioService {
                 empresa.getNombre(),
                 usuario.getRol());
 
+        log.info("Usuario invitado exitosamente: {}", usuario.getUsername());
+
         return guardado;
     }
 
@@ -61,6 +65,8 @@ public class UsuarioService implements IUsuarioService {
         if (!usuario.getActivo()) {
             throw new IllegalArgumentException("El usuario se encuentra inactivo");
         }
+
+        log.info("Sesión iniciada para usuario: {}", usuario.getUsername());
 
         return usuario;
     }

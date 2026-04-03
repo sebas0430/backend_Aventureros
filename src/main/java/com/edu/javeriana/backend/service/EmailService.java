@@ -1,7 +1,5 @@
 package com.edu.javeriana.backend.service;
 
-import com.edu.javeriana.backend.service.interfaces.*;
-
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;

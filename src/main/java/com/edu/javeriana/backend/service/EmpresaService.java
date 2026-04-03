@@ -8,6 +8,7 @@ import com.edu.javeriana.backend.model.Pool;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.EmpresaRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j  
 public class EmpresaService implements IEmpresaService {
 
     private final EmpresaRepository empresaRepository;
@@ -57,6 +59,8 @@ public class EmpresaService implements IEmpresaService {
                 .empresa(empresa)
                 .build();
         poolService.guardarPool(poolDefault);
+
+        log.info("Empresa registrada exitosamente: {}", empresa.getNombre());
 
         return empresa;
     }

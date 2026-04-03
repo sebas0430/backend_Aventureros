@@ -12,6 +12,7 @@ import com.edu.javeriana.backend.repository.PoolRepository;
 import com.edu.javeriana.backend.repository.ProcesoRepository;
 import com.edu.javeriana.backend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProcesoService implements IProcesoService {
 
     private final ProcesoRepository procesoRepository;
@@ -67,6 +69,8 @@ public class ProcesoService implements IProcesoService {
 
         // Nace explícitamente en estado BORRADOR
         proceso.setEstado(com.edu.javeriana.backend.model.EstadoProceso.BORRADOR);
+
+        log.info("Proceso creado con nombre: {}", proceso.getNombre());
 
         return procesoRepository.save(proceso);
     }
@@ -175,6 +179,7 @@ public class ProcesoService implements IProcesoService {
                     .build();
 
             historialProcesoRepository.save(historial);
+            log.info("Proceso {} editado exitosamente", proceso.getId());
         }
 
         return proceso;
@@ -209,6 +214,7 @@ public class ProcesoService implements IProcesoService {
                 .detalle("El proceso fue eliminado (estado cambiado a INACTIVO).")
                 .build();
         historialProcesoRepository.save(historial);
+        log.info("Proceso {} eliminado", proceso.getId());
     }
 
     @Override
@@ -239,6 +245,7 @@ public class ProcesoService implements IProcesoService {
         }
 
         proceso.setEstado(nuevoEstado);
+        log.info("Estado del proceso {} cambiado a {}", proceso.getId(), nuevoEstado);
         return procesoRepository.save(proceso);
     }
 

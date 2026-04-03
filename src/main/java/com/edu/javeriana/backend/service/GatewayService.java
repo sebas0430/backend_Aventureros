@@ -13,6 +13,7 @@ import com.edu.javeriana.backend.model.TipoNodo;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.GatewayRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j      
 public class GatewayService implements IGatewayService {
 
     private final GatewayRepository gatewayRepository;
@@ -43,6 +45,8 @@ public class GatewayService implements IGatewayService {
                 .tipo(tipoGateway)
                 .proceso(proceso)
                 .build();
+
+        log.info("Gateway {} creado exitosamente en proceso {}", gateway.getNombre(), proceso.getId());
 
         return gatewayRepository.save(gateway);
     }
@@ -84,6 +88,7 @@ public class GatewayService implements IGatewayService {
         arcoService.eliminarArcosPorNodo(procesoId, id, TipoNodo.GATEWAY);
 
         gatewayRepository.delete(gateway);
+        log.info("Gateway {} eliminado exitosamente", id);
     }
 
     @Override
