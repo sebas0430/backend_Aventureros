@@ -2,22 +2,21 @@ package com.edu.javeriana.backend.service;
 
 import com.edu.javeriana.backend.dto.ActividadEdicionDTO;
 import com.edu.javeriana.backend.dto.ActividadRegistroDTO;
-import com.edu.javeriana.backend.model.Actividad;
 
 import java.util.List;
 
 public interface IActividadService {
 
     // HU-08: Crear actividad vinculada a un proceso
-    Actividad crearActividad(ActividadRegistroDTO dto);
+    ActividadRegistroDTO crearActividad(ActividadRegistroDTO dto);
 
     // HU-09: Editar actividad (guarda cambios en historial del proceso)
-    Actividad editarActividad(Long actividadId, ActividadEdicionDTO dto);
+    ActividadEdicionDTO editarActividad(Long actividadId, ActividadEdicionDTO dto);
 
     // HU-10: Eliminar actividad (solo admin, reajusta flujo)
     void eliminarActividad(Long actividadId, Long usuarioId);
 
     // Consultas
-    List<Actividad> listarPorProceso(Long procesoId);
-    Actividad obtenerPorId(Long actividadId);
+    List<ActividadRegistroDTO> listarPorProceso(Long procesoId);
+    ActividadRegistroDTO obtenerPorId(Long actividadId);
 }

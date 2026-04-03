@@ -12,26 +12,39 @@ import com.edu.javeriana.backend.repository.AsignacionRolPoolRepository;
 import com.edu.javeriana.backend.repository.PoolRepository;
 import com.edu.javeriana.backend.repository.RolPoolRepository;
 import com.edu.javeriana.backend.repository.UsuarioRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class RolPoolService implements IRolPoolService {
 
     private final RolPoolRepository rolPoolRepository;
     private final AsignacionRolPoolRepository asignacionRolPoolRepository;
     private final PoolRepository poolRepository;
     private final UsuarioRepository usuarioRepository;
+    private final ModelMapper modelMapper;
+
+    public RolPoolService(RolPoolRepository rolPoolRepository,
+                          AsignacionRolPoolRepository asignacionRolPoolRepository,
+                          PoolRepository poolRepository,
+                          UsuarioRepository usuarioRepository,
+                          ModelMapper modelMapper) {
+        this.rolPoolRepository           = rolPoolRepository;
+        this.asignacionRolPoolRepository = asignacionRolPoolRepository;
+        this.poolRepository              = poolRepository;
+        this.usuarioRepository           = usuarioRepository;
+        this.modelMapper                 = modelMapper;
+    }
 
     @Override
     @Transactional
-    public RolPool crearRol(RolPoolRegistroDTO dto) {
+    public RolPoolRegistroDTO crearRol(RolPoolRegistroDTO dto) {
         Pool pool = poolRepository.findById(dto.getPoolId())
                 .orElseThrow(() -> new ResourceNotFoundException("Pool no encontrado"));
 
@@ -52,13 +65,19 @@ public class RolPoolService implements IRolPoolService {
                 .permisoGestionarRoles(dto.isPermisoGestionarRoles())
                 .build();
 
-        log.info("AUDITORIA: Usuario {} creó un nuevo Rol '{}' en el Pool ID={}", dto.getUsuarioId(), rol.getNombre(), pool.getId());
-        return rolPoolRepository.save(rol);
+        RolPool guardado = rolPoolRepository.save(rol);
+        log.info("AUDITORIA: Usuario {} creó un nuevo Rol '{}' en el Pool ID={}",
+                dto.getUsuarioId(), guardado.getNombre(), pool.getId());
+
+        RolPoolRegistroDTO response = modelMapper.map(guardado, RolPoolRegistroDTO.class);
+        response.setPoolId(guardado.getPool().getId());
+        response.setUsuarioId(dto.getUsuarioId());
+        return response;
     }
 
     @Override
     @Transactional
-    public RolPool editarRol(Long id, RolPoolRegistroDTO dto) {
+    public RolPoolRegistroDTO editarRol(Long id, RolPoolRegistroDTO dto) {
         RolPool rol = rolPoolRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Rol no encontrado"));
 
@@ -72,8 +91,14 @@ public class RolPoolService implements IRolPoolService {
         rol.setPermisoPublicarProceso(dto.isPermisoPublicarProceso());
         rol.setPermisoGestionarRoles(dto.isPermisoGestionarRoles());
 
-        log.info("AUDITORIA: Usuario {} modificó los permisos/datos del Rol ID={}", dto.getUsuarioId(), rol.getId());
-        return rolPoolRepository.save(rol);
+        RolPool actualizado = rolPoolRepository.save(rol);
+        log.info("AUDITORIA: Usuario {} modificó los permisos/datos del Rol ID={}",
+                dto.getUsuarioId(), actualizado.getId());
+
+        RolPoolRegistroDTO response = modelMapper.map(actualizado, RolPoolRegistroDTO.class);
+        response.setPoolId(actualizado.getPool().getId());
+        response.setUsuarioId(dto.getUsuarioId());
+        return response;
     }
 
     @Override
@@ -84,9 +109,9 @@ public class RolPoolService implements IRolPoolService {
 
         validarPermisoGestionRoles(usuarioSolicitanteId, rol.getPool());
 
-        // HU-24: Evitar que la eliminación deje procesos "huerfanos" (o en este caso, usuarios huérfanos sin rol).
         if (asignacionRolPoolRepository.existsByRolId(rol.getId())) {
-            throw new BusinessRuleException("No se puede eliminar un rol si hay usuarios asignados a él. Reasigne a los usuarios primero.");
+            throw new BusinessRuleException(
+                    "No se puede eliminar un rol si hay usuarios asignados a él. Reasigne a los usuarios primero.");
         }
 
         rolPoolRepository.delete(rol);
@@ -95,7 +120,7 @@ public class RolPoolService implements IRolPoolService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<RolPool> listarRolesPorPool(Long poolId, Long usuarioId) {
+    public List<RolPoolRegistroDTO> listarRolesPorPool(Long poolId, Long usuarioId) {
         Pool pool = poolRepository.findById(poolId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pool no encontrado"));
 
@@ -103,15 +128,22 @@ public class RolPoolService implements IRolPoolService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
         if (!solicitante.getEmpresa().getId().equals(pool.getEmpresa().getId())) {
-             throw new BusinessRuleException("Permiso denegado: La empresa no coincide.");
+            throw new BusinessRuleException("Permiso denegado: La empresa no coincide.");
         }
 
-        return rolPoolRepository.findByPoolId(poolId);
+        return rolPoolRepository.findByPoolId(poolId)
+                .stream()
+                .map(r -> {
+                    RolPoolRegistroDTO dto = modelMapper.map(r, RolPoolRegistroDTO.class);
+                    dto.setPoolId(r.getPool().getId());
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
-    public AsignacionRolPool asignarRolAUsuario(AsignacionRolDTO dto) {
+    public AsignacionRolDTO asignarRolAUsuario(AsignacionRolDTO dto) {
         Pool pool = poolRepository.findById(dto.getPoolId())
                 .orElseThrow(() -> new ResourceNotFoundException("Pool no encontrado"));
 
@@ -121,7 +153,8 @@ public class RolPoolService implements IRolPoolService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario destino no encontrado"));
 
         if (!destinatario.getEmpresa().getId().equals(pool.getEmpresa().getId())) {
-            throw new BusinessRuleException("No puedes asignar un rol a un usuario que no pertenece a tu misma empresa.");
+            throw new BusinessRuleException(
+                    "No puedes asignar un rol a un usuario que no pertenece a tu misma empresa.");
         }
 
         RolPool rol = rolPoolRepository.findById(dto.getRolPoolId())
@@ -131,16 +164,24 @@ public class RolPoolService implements IRolPoolService {
             throw new BusinessRuleException("El rol que intentas asignar no pertenece a este Pool.");
         }
 
-        // Si el usuario ya tiene rol en el pool, actualizarlo.
-        AsignacionRolPool asignacion = asignacionRolPoolRepository.findByUsuarioIdAndPoolId(destinatario.getId(), pool.getId())
+        AsignacionRolPool asignacion = asignacionRolPoolRepository
+                .findByUsuarioIdAndPoolId(destinatario.getId(), pool.getId())
                 .orElse(new AsignacionRolPool());
 
         asignacion.setUsuario(destinatario);
         asignacion.setRol(rol);
         asignacion.setPool(pool);
 
-        log.info("AUDITORIA: Usuario {} le asignó el rol '{}' al usuario {} en el pool ID={}", dto.getUsuarioId(), rol.getNombre(), destinatario.getId(), pool.getId());
-        return asignacionRolPoolRepository.save(asignacion);
+        AsignacionRolPool guardada = asignacionRolPoolRepository.save(asignacion);
+        log.info("AUDITORIA: Usuario {} le asignó el rol '{}' al usuario {} en el pool ID={}",
+                dto.getUsuarioId(), rol.getNombre(), destinatario.getId(), pool.getId());
+
+        AsignacionRolDTO response = new AsignacionRolDTO();
+        response.setUsuarioDestinoId(guardada.getUsuario().getId());
+        response.setRolPoolId(guardada.getRol().getId());
+        response.setPoolId(guardada.getPool().getId());
+        response.setUsuarioId(dto.getUsuarioId());
+        return response;
     }
 
     @Override
@@ -151,17 +192,28 @@ public class RolPoolService implements IRolPoolService {
 
         validarPermisoGestionRoles(usuarioId, pool);
 
-        AsignacionRolPool asignacion = asignacionRolPoolRepository.findByUsuarioIdAndPoolId(usuarioDestinoId, poolId)
-                .orElseThrow(() -> new ResourceNotFoundException("El usuario destino no tiene un rol en este pool"));
+        AsignacionRolPool asignacion = asignacionRolPoolRepository
+                .findByUsuarioIdAndPoolId(usuarioDestinoId, poolId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "El usuario destino no tiene un rol en este pool"));
 
         asignacionRolPoolRepository.delete(asignacion);
-        log.info("AUDITORIA: Usuario {} desasignó rol al usuario {} en el pool ID={}", usuarioId, usuarioDestinoId, poolId);
+        log.info("AUDITORIA: Usuario {} desasignó rol al usuario {} en el pool ID={}",
+                usuarioId, usuarioDestinoId, poolId);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public AsignacionRolPool obtenerAsignacionUsuario(Long usuarioDestinoId, Long poolId) {
-        return asignacionRolPoolRepository.findByUsuarioIdAndPoolId(usuarioDestinoId, poolId).orElse(null);
+    public AsignacionRolDTO obtenerAsignacionUsuario(Long usuarioDestinoId, Long poolId) {
+        return asignacionRolPoolRepository.findByUsuarioIdAndPoolId(usuarioDestinoId, poolId)
+                .map(a -> {
+                    AsignacionRolDTO dto = new AsignacionRolDTO();
+                    dto.setUsuarioDestinoId(a.getUsuario().getId());
+                    dto.setRolPoolId(a.getRol().getId());
+                    dto.setPoolId(a.getPool().getId());
+                    return dto;
+                })
+                .orElse(null);
     }
 
     private void validarPermisoGestionRoles(Long usuarioId, Pool pool) {
@@ -172,17 +224,19 @@ public class RolPoolService implements IRolPoolService {
             throw new BusinessRuleException("No perteneces a la empresa de este pool.");
         }
 
-        // Si es el ADMINISTRADOR GLOBAL DE LA EMPRESA, le dejamos gestionar todos los roles de todos los pools por defecto.
         if ("ADMINISTRADOR_EMPRESA".equals(solicitante.getRol())) {
-             return;
+            return;
         }
 
-        // Si no es un ADMIN global, verificar si dentro de su rol de pool particular tiene "permisoGestionarRoles=true"
-        AsignacionRolPool asignacionActual = asignacionRolPoolRepository.findByUsuarioIdAndPoolId(solicitante.getId(), pool.getId())
-                .orElseThrow(() -> new BusinessRuleException("No tienes permisos suficientes (Tampoco tienes ningún rol asignado en este pool)."));
+        AsignacionRolPool asignacionActual = asignacionRolPoolRepository
+                .findByUsuarioIdAndPoolId(solicitante.getId(), pool.getId())
+                .orElseThrow(() -> new BusinessRuleException(
+                        "No tienes permisos suficientes (Tampoco tienes ningún rol asignado en este pool)."));
 
         if (!asignacionActual.getRol().isPermisoGestionarRoles()) {
-            throw new BusinessRuleException("Tu rol en este pool (" + asignacionActual.getRol().getNombre() + ") no tiene los privilegios de gestionar roles.");
+            throw new BusinessRuleException("Tu rol en este pool (" +
+                    asignacionActual.getRol().getNombre() +
+                    ") no tiene los privilegios de gestionar roles.");
         }
     }
 }

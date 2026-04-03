@@ -6,29 +6,42 @@ import com.edu.javeriana.backend.exception.BusinessRuleException;
 import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.model.*;
 import com.edu.javeriana.backend.repository.*;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ActividadService implements IActividadService {
 
     private final ActividadRepository actividadRepository;
     private final ProcesoRepository procesoRepository;
     private final UsuarioRepository usuarioRepository;
     private final HistorialProcesoRepository historialProcesoRepository;
+    private final ModelMapper modelMapper;
+
+    public ActividadService(ActividadRepository actividadRepository,
+                            ProcesoRepository procesoRepository,
+                            UsuarioRepository usuarioRepository,
+                            HistorialProcesoRepository historialProcesoRepository,
+                            ModelMapper modelMapper) {
+        this.actividadRepository        = actividadRepository;
+        this.procesoRepository          = procesoRepository;
+        this.usuarioRepository          = usuarioRepository;
+        this.historialProcesoRepository = historialProcesoRepository;
+        this.modelMapper                = modelMapper;
+    }
 
     // ─────────────────────────────────────────────
     // HU-08: Crear actividad
     // ─────────────────────────────────────────────
     @Transactional
     @Override
-    public Actividad crearActividad(ActividadRegistroDTO dto) {
+    public ActividadRegistroDTO crearActividad(ActividadRegistroDTO dto) {
 
         Proceso proceso = procesoRepository.findById(dto.getProcesoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado"));
@@ -36,7 +49,6 @@ public class ActividadService implements IActividadService {
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        // Solo EDITOR o ADMINISTRADOR_EMPRESA pueden crear actividades
         boolean autorizado = RolGlobal.ADMINISTRADOR_EMPRESA.name().equals(usuario.getRol())
                 || RolGlobal.EDITOR.name().equals(usuario.getRol());
 
@@ -58,7 +70,6 @@ public class ActividadService implements IActividadService {
         actividad = actividadRepository.save(actividad);
         log.info("Actividad {} creada exitosamente en proceso {}", actividad.getId(), proceso.getId());
 
-        // Guardar en historial del proceso (HU-08: la actividad queda vinculada)
         HistorialProceso historial = HistorialProceso.builder()
                 .proceso(proceso)
                 .usuario(usuario)
@@ -69,7 +80,10 @@ public class ActividadService implements IActividadService {
                 .build();
         historialProcesoRepository.save(historial);
 
-        return actividad;
+        // Mapear entidad → DTO existente
+        ActividadRegistroDTO response = modelMapper.map(actividad, ActividadRegistroDTO.class);
+        response.setProcesoId(actividad.getProceso().getId());
+        return response;
     }
 
     // ─────────────────────────────────────────────
@@ -77,7 +91,7 @@ public class ActividadService implements IActividadService {
     // ─────────────────────────────────────────────
     @Transactional
     @Override
-    public Actividad editarActividad(Long actividadId, ActividadEdicionDTO dto) {
+    public ActividadEdicionDTO editarActividad(Long actividadId, ActividadEdicionDTO dto) {
 
         Actividad actividad = actividadRepository.findById(actividadId)
                 .orElseThrow(() -> new ResourceNotFoundException("Actividad no encontrada"));
@@ -85,7 +99,6 @@ public class ActividadService implements IActividadService {
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        // Solo EDITOR o ADMINISTRADOR_EMPRESA pueden editar
         boolean autorizado = RolGlobal.ADMINISTRADOR_EMPRESA.name().equals(usuario.getRol())
                 || RolGlobal.EDITOR.name().equals(usuario.getRol());
 
@@ -94,7 +107,6 @@ public class ActividadService implements IActividadService {
                     "No tienes permisos para editar actividades. Se requiere rol EDITOR o ADMINISTRADOR_EMPRESA.");
         }
 
-        // Construir detalle de cambios para el historial (HU-09)
         StringBuilder cambios = new StringBuilder();
 
         if (!actividad.getNombre().equals(dto.getNombre())) {
@@ -126,7 +138,6 @@ public class ActividadService implements IActividadService {
             actividad = actividadRepository.save(actividad);
             log.info("Actividad {} editada exitosamente", actividadId);
 
-            // HU-09: Los cambios se guardan en el historial del proceso
             HistorialProceso historial = HistorialProceso.builder()
                     .proceso(actividad.getProceso())
                     .usuario(usuario)
@@ -136,7 +147,8 @@ public class ActividadService implements IActividadService {
             historialProcesoRepository.save(historial);
         }
 
-        return actividad;
+        // Mapear entidad → DTO existente
+        return modelMapper.map(actividad, ActividadEdicionDTO.class);
     }
 
     // ─────────────────────────────────────────────
@@ -152,19 +164,14 @@ public class ActividadService implements IActividadService {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        // HU-10: Solo el ADMINISTRADOR_EMPRESA puede eliminar
         if (!RolGlobal.ADMINISTRADOR_EMPRESA.name().equals(usuario.getRol())) {
-            throw new BusinessRuleException(
-                    "Solo un administrador puede eliminar actividades.");
+            throw new BusinessRuleException("Solo un administrador puede eliminar actividades.");
         }
 
-        // Marcar como inactiva (soft delete — la confirmación viene del frontend)
         actividad.setActiva(false);
         actividadRepository.save(actividad);
         log.info("Actividad {} marcada como inactiva (soft delete)", actividadId);
 
-        // HU-10: El flujo del proceso se ajusta automáticamente —
-        // reordenar las actividades restantes del proceso
         List<Actividad> actividadesActivas = actividadRepository
                 .findByProcesoIdAndActivaTrueOrderByOrdenAsc(actividad.getProceso().getId());
 
@@ -173,7 +180,6 @@ public class ActividadService implements IActividadService {
         }
         actividadRepository.saveAll(actividadesActivas);
 
-        // Guardar en historial del proceso
         HistorialProceso historial = HistorialProceso.builder()
                 .proceso(actividad.getProceso())
                 .usuario(usuario)
@@ -189,14 +195,25 @@ public class ActividadService implements IActividadService {
     // ─────────────────────────────────────────────
     @Transactional(readOnly = true)
     @Override
-    public List<Actividad> listarPorProceso(Long procesoId) {
-        return actividadRepository.findByProcesoIdAndActivaTrueOrderByOrdenAsc(procesoId);
+    public List<ActividadRegistroDTO> listarPorProceso(Long procesoId) {
+        return actividadRepository.findByProcesoIdAndActivaTrueOrderByOrdenAsc(procesoId)
+                .stream()
+                .map(a -> {
+                    ActividadRegistroDTO dto = modelMapper.map(a, ActividadRegistroDTO.class);
+                    dto.setProcesoId(a.getProceso().getId());
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     @Override
-    public Actividad obtenerPorId(Long actividadId) {
-        return actividadRepository.findById(actividadId)
+    public ActividadRegistroDTO obtenerPorId(Long actividadId) {
+        Actividad actividad = actividadRepository.findById(actividadId)
                 .orElseThrow(() -> new ResourceNotFoundException("Actividad no encontrada"));
+
+        ActividadRegistroDTO response = modelMapper.map(actividad, ActividadRegistroDTO.class);
+        response.setProcesoId(actividad.getProceso().getId());
+        return response;
     }
 }
