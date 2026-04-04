@@ -2,7 +2,8 @@ package com.edu.javeriana.backend.controller;
 
 import com.edu.javeriana.backend.dto.GatewayEdicionDTO;
 import com.edu.javeriana.backend.dto.GatewayRegistroDTO;
-import com.edu.javeriana.backend.service.IGatewayService;
+import com.edu.javeriana.backend.model.Gateway;
+import com.edu.javeriana.backend.service.interfaces.IGatewayService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,42 +22,47 @@ public class GatewayController {
 
     // POST /api/gateways — Crear un gateway (solo autor o admin)
     @PostMapping
-    public ResponseEntity<GatewayRegistroDTO> crearGateway(
-            @Valid @RequestBody GatewayRegistroDTO dto) {
-        GatewayRegistroDTO response = gatewayService.crearGateway(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    public ResponseEntity<?> crearGateway(@Valid @RequestBody GatewayRegistroDTO dto) {
+        Gateway gateway = gatewayService.crearGateway(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "id", gateway.getId(),
+                "nombre", gateway.getNombre(),
+                "tipo", gateway.getTipo().name(),
+                "procesoId", gateway.getProceso().getId(),
+                "mensaje", "Gateway creado exitosamente"
+        ));
     }
 
     // PUT /api/gateways/{id} — Editar un gateway existente
     @PutMapping("/{id}")
-    public ResponseEntity<GatewayEdicionDTO> editarGateway(
-            @PathVariable Long id,
-            @Valid @RequestBody GatewayEdicionDTO dto) {
-        GatewayEdicionDTO response = gatewayService.editarGateway(id, dto);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<?> editarGateway(@PathVariable Long id,
+                                           @Valid @RequestBody GatewayEdicionDTO dto) {
+        Gateway gateway = gatewayService.editarGateway(id, dto);
+        return ResponseEntity.ok(Map.of(
+                "id", gateway.getId(),
+                "nombre", gateway.getNombre(),
+                "tipo", gateway.getTipo().name(),
+                "procesoId", gateway.getProceso().getId(),
+                "mensaje", "Gateway editado exitosamente"
+        ));
     }
 
     // GET /api/gateways/proceso/{procesoId} — Listar todos los gateways de un proceso
     @GetMapping("/proceso/{procesoId}")
-    public ResponseEntity<List<GatewayRegistroDTO>> listarGatewaysPorProceso(
-            @PathVariable Long procesoId) {
+    public ResponseEntity<List<Gateway>> listarGatewaysPorProceso(@PathVariable Long procesoId) {
         return ResponseEntity.ok(gatewayService.listarGatewaysPorProceso(procesoId));
     }
 
     // DELETE /api/gateways/{id}?usuarioId=X — Eliminar un gateway (solo admin)
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, String>> eliminarGateway(
-            @PathVariable Long id,
-            @RequestParam Long usuarioId) {
+    public ResponseEntity<?> eliminarGateway(@PathVariable Long id, @RequestParam Long usuarioId) {
         gatewayService.eliminarGateway(id, usuarioId);
         return ResponseEntity.ok(Map.of("mensaje", "Gateway eliminado exitosamente"));
     }
 
     // DELETE /api/gateways/proceso/{procesoId}?usuarioId=X — Eliminar todos los gateways de un proceso (solo admin)
     @DeleteMapping("/proceso/{procesoId}")
-    public ResponseEntity<Map<String, String>> eliminarGatewaysPorProceso(
-            @PathVariable Long procesoId,
-            @RequestParam Long usuarioId) {
+    public ResponseEntity<?> eliminarGatewaysPorProceso(@PathVariable Long procesoId, @RequestParam Long usuarioId) {
         gatewayService.eliminarGatewaysPorProceso(procesoId, usuarioId);
         return ResponseEntity.ok(Map.of("mensaje", "Todos los gateways del proceso fueron eliminados"));
     }

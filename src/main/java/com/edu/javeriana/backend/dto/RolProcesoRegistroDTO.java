@@ -4,12 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
-import java.time.LocalDateTime;
-
 @Data
 public class RolProcesoRegistroDTO {
-
-    private Long id;
 
     @NotBlank(message = "El nombre del rol de proceso es obligatorio")
     private String nombre;
@@ -21,6 +17,4 @@ public class RolProcesoRegistroDTO {
 
     @NotNull(message = "El ID del usuario solicitante es obligatorio para verificar permisos")
     private Long usuarioId;
-
-    private LocalDateTime createdAt;
 }

@@ -1,19 +1,20 @@
-package com.edu.javeriana.backend.service;
+package com.edu.javeriana.backend.service.interfaces;
 
 import com.edu.javeriana.backend.dto.ArcoEdicionDTO;
 import com.edu.javeriana.backend.dto.ArcoRegistroDTO;
+import com.edu.javeriana.backend.model.Arco;
 
 import java.util.List;
 
 public interface IArcoService {
 
-    ArcoRegistroDTO crearArco(ArcoRegistroDTO dto);
+    Arco crearArco(ArcoRegistroDTO dto);
 
-    ArcoEdicionDTO editarArco(Long id, ArcoEdicionDTO dto);
+    Arco editarArco(Long id, ArcoEdicionDTO dto);
 
-    List<ArcoRegistroDTO> listarArcosPorProceso(Long procesoId);
+    List<Arco> listarArcosPorProceso(Long procesoId);
 
-    ArcoRegistroDTO obtenerArcoPorId(Long id);
+    Arco obtenerArcoPorId(Long id);
 
     void eliminarArco(Long id, Long usuarioId);
 

@@ -3,13 +3,9 @@ package com.edu.javeriana.backend.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
-import java.time.LocalDateTime;
 
 @Data
 public class EmpresaRegistroDTO {
-
-    private Long id;
-
     @NotBlank(message = "El nombre de la empresa es obligatorio")
     private String nombre;
 
@@ -22,6 +18,4 @@ public class EmpresaRegistroDTO {
 
     @NotBlank(message = "La contraseña del administrador inicial es obligatoria")
     private String passwordAdmin;
-
-    private LocalDateTime createdAt;
 }

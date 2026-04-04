@@ -1,17 +1,18 @@
-package com.edu.javeriana.backend.service;
+package com.edu.javeriana.backend.service.interfaces;
 
 import com.edu.javeriana.backend.dto.GatewayEdicionDTO;
 import com.edu.javeriana.backend.dto.GatewayRegistroDTO;
+import com.edu.javeriana.backend.model.Gateway;
 
 import java.util.List;
 
 public interface IGatewayService {
 
-    GatewayRegistroDTO crearGateway(GatewayRegistroDTO dto);
+    Gateway crearGateway(GatewayRegistroDTO dto);
 
-    GatewayEdicionDTO editarGateway(Long id, GatewayEdicionDTO dto);
+    Gateway editarGateway(Long id, GatewayEdicionDTO dto);
 
-    List<GatewayRegistroDTO> listarGatewaysPorProceso(Long procesoId);
+    List<Gateway> listarGatewaysPorProceso(Long procesoId);
 
     void eliminarGateway(Long id, Long usuarioId);
 

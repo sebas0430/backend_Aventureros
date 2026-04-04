@@ -6,12 +6,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
-import java.time.LocalDateTime;
-
 @Data
 public class EventoMensajeRegistroDTO {
-
-    private Long id;
 
     @NotBlank(message = "El nombre del mensaje es obligatorio")
     private String nombreMensaje;
@@ -28,7 +24,4 @@ public class EventoMensajeRegistroDTO {
 
     @NotNull(message = "El ID del usuario es obligatorio para verificar permisos")
     private Long usuarioId;
-
-    private LocalDateTime createdAt;
-
 }

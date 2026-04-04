@@ -5,12 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
-import java.time.LocalDateTime;
-
 @Data
 public class ConectorExternoRegistroDTO {
-
-    private Long id;
 
     @NotBlank(message = "El nombre del conector es obligatorio")
     private String nombre;
@@ -36,6 +32,4 @@ public class ConectorExternoRegistroDTO {
 
     @NotNull(message = "El ID del usuario solicitante es obligatorio")
     private Long usuarioId;
-
-    private LocalDateTime createdAt;
 }

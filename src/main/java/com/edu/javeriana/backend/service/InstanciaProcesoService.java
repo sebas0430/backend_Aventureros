@@ -1,5 +1,6 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.service.interfaces.IInstanciaProcesoService;
 import com.edu.javeriana.backend.model.InstanciaProceso;
 import com.edu.javeriana.backend.model.EstadoInstancia;
 import com.edu.javeriana.backend.repository.InstanciaProcesoRepository;
