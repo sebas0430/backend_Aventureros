@@ -13,11 +13,14 @@ import com.edu.javeriana.backend.repository.UsuarioRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+
+@Slf4j
 @Service
 public class EmpresaService implements IEmpresaService {
 
@@ -75,7 +78,7 @@ public class EmpresaService implements IEmpresaService {
         // Mapear entidad → DTO existente
         EmpresaRegistroDTO response = modelMapper.map(guardada, EmpresaRegistroDTO.class);
         response.setCorreoContacto(admin.getUsername()); // Llenamos de vuelta para el response
-        response.setPasswordAdmin(null); // No queremos devolver el password
+        response.setPasswordAdmin(null); // No devuelve el password
 
         return response;
     }

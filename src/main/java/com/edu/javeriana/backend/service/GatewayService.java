@@ -12,10 +12,14 @@ import com.edu.javeriana.backend.repository.UsuarioRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
+
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+
+@Slf4j
 @Service
 public class GatewayService implements IGatewayService {
 

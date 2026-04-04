@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -17,10 +18,6 @@ public class UsuarioController {
 
     private final IUsuarioService usuarioService;
 
-    /**
-     * Body esperado: { "correo": "...", "password": "...", "rol": "...", "empresaId": 1 }
-     * Retorna UsuarioRegistroDTO (sin contraseña).
-     */
     @PostMapping("/invitar")
     public ResponseEntity<UsuarioRegistroDTO> invitarUsuario(@RequestBody Map<String, Object> body) {
         String correo   = (String) body.get("correo");
@@ -28,20 +25,41 @@ public class UsuarioController {
         String rol      = (String) body.get("rol");
         Long empresaId  = Long.valueOf(body.get("empresaId").toString());
 
-        UsuarioRegistroDTO response = usuarioService.invitarUsuario(correo, password, rol, empresaId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(usuarioService.invitarUsuario(correo, password, rol, empresaId));
     }
 
-    /**
-     * Body esperado: { "correo": "...", "password": "..." }
-     * Retorna UsuarioLoginDTO (sin contraseña).
-     */
     @PostMapping("/login")
     public ResponseEntity<UsuarioLoginDTO> iniciarSesion(@RequestBody Map<String, String> body) {
         String correo   = body.get("correo");
         String password = body.get("password");
 
-        UsuarioLoginDTO response = usuarioService.iniciarSesion(correo, password);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(usuarioService.iniciarSesion(correo, password));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UsuarioRegistroDTO> obtenerUsuario(@PathVariable Long id) {
+        return ResponseEntity.ok(usuarioService.obtenerUsuario(id));
+    }
+
+    @GetMapping("/empresa/{empresaId}")
+    public ResponseEntity<List<UsuarioRegistroDTO>> listarPorEmpresa(@PathVariable Long empresaId) {
+        return ResponseEntity.ok(usuarioService.listarPorEmpresa(empresaId));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UsuarioRegistroDTO> actualizarUsuario(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body) {
+        String rol     = (String) body.get("rol");
+        Boolean activo = body.get("activo") != null ? (Boolean) body.get("activo") : null;
+
+        return ResponseEntity.ok(usuarioService.actualizarUsuario(id, rol, activo));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, String>> eliminarUsuario(@PathVariable Long id) {
+        usuarioService.eliminarUsuario(id);
+        return ResponseEntity.ok(Map.of("mensaje", "Usuario eliminado exitosamente"));
     }
 }
