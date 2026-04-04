@@ -1,22 +1,23 @@
 package com.edu.javeriana.backend.service;
 
-import com.edu.javeriana.backend.service.interfaces.*;
-
+import com.edu.javeriana.backend.service.interfaces.IHistorialProcesoService;
 import com.edu.javeriana.backend.model.HistorialProceso;
 import com.edu.javeriana.backend.model.Proceso;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.HistorialProcesoRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class HistorialProcesoService implements IHistorialProcesoService {
 
     private final HistorialProcesoRepository historialProcesoRepository;
+
+    public HistorialProcesoService(HistorialProcesoRepository historialProcesoRepository) {
+        this.historialProcesoRepository = historialProcesoRepository;
+    }
 
     @Override
     @Transactional

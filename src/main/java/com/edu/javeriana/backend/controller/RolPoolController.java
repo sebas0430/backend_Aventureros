@@ -2,8 +2,6 @@ package com.edu.javeriana.backend.controller;
 
 import com.edu.javeriana.backend.dto.AsignacionRolDTO;
 import com.edu.javeriana.backend.dto.RolPoolRegistroDTO;
-import com.edu.javeriana.backend.model.AsignacionRolPool;
-import com.edu.javeriana.backend.model.RolPool;
 import com.edu.javeriana.backend.service.interfaces.IRolPoolService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,51 +20,39 @@ public class RolPoolController {
     private final IRolPoolService rolPoolService;
 
     @PostMapping
-    public ResponseEntity<?> crearRol(@Valid @RequestBody RolPoolRegistroDTO dto) {
-        RolPool rol = rolPoolService.crearRol(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                "id", rol.getId(),
-                "nombre", rol.getNombre(),
-                "poolId", rol.getPool().getId(),
-                "mensaje", "Rol de pool creado exitosamente"
-        ));
+    public ResponseEntity<RolPoolRegistroDTO> crearRol(@Valid @RequestBody RolPoolRegistroDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(rolPoolService.crearRol(dto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> editarRol(@PathVariable Long id, @Valid @RequestBody RolPoolRegistroDTO dto) {
-        RolPool rol = rolPoolService.editarRol(id, dto);
-        return ResponseEntity.ok(Map.of(
-                "id", rol.getId(),
-                "nombre", rol.getNombre(),
-                "mensaje", "Rol actualizado exitosamente"
-        ));
+    public ResponseEntity<RolPoolRegistroDTO> editarRol(
+            @PathVariable Long id,
+            @Valid @RequestBody RolPoolRegistroDTO dto) {
+        return ResponseEntity.ok(rolPoolService.editarRol(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminarRol(@PathVariable Long id, @RequestParam Long usuarioSolicitanteId) {
+    public ResponseEntity<Map<String, String>> eliminarRol(
+            @PathVariable Long id,
+            @RequestParam Long usuarioSolicitanteId) {
         rolPoolService.eliminarRol(id, usuarioSolicitanteId);
         return ResponseEntity.ok(Map.of("mensaje", "Rol eliminado exitosamente"));
     }
 
     @GetMapping("/pool/{poolId}")
-    public ResponseEntity<List<RolPool>> listarRolesPorPool(@PathVariable Long poolId, @RequestParam Long usuarioId) {
+    public ResponseEntity<List<RolPoolRegistroDTO>> listarRolesPorPool(
+            @PathVariable Long poolId,
+            @RequestParam Long usuarioId) {
         return ResponseEntity.ok(rolPoolService.listarRolesPorPool(poolId, usuarioId));
     }
 
     @PostMapping("/asignar")
-    public ResponseEntity<?> asignarRolAUsuario(@Valid @RequestBody AsignacionRolDTO dto) {
-        AsignacionRolPool asignacion = rolPoolService.asignarRolAUsuario(dto);
-        return ResponseEntity.ok(Map.of(
-                "id", asignacion.getId(),
-                "usuarioId", asignacion.getUsuario().getId(),
-                "rolNombre", asignacion.getRol().getNombre(),
-                "poolId", asignacion.getPool().getId(),
-                "mensaje", "Rol asignado correctamente"
-        ));
+    public ResponseEntity<AsignacionRolDTO> asignarRolAUsuario(@Valid @RequestBody AsignacionRolDTO dto) {
+        return ResponseEntity.ok(rolPoolService.asignarRolAUsuario(dto));
     }
 
     @DeleteMapping("/desasignar")
-    public ResponseEntity<?> desasignarRol(
+    public ResponseEntity<Map<String, String>> desasignarRol(
             @RequestParam Long usuarioDestinoId,
             @RequestParam Long poolId,
             @RequestParam Long usuarioId) {
@@ -75,11 +61,13 @@ public class RolPoolController {
     }
 
     @GetMapping("/usuario/{usuarioDestinoId}/pool/{poolId}")
-    public ResponseEntity<?> obtenerRolDeUsuario(@PathVariable Long usuarioDestinoId, @PathVariable Long poolId) {
-        AsignacionRolPool asignacion = rolPoolService.obtenerAsignacionUsuario(usuarioDestinoId, poolId);
+    public ResponseEntity<AsignacionRolDTO> obtenerRolDeUsuario(
+            @PathVariable Long usuarioDestinoId,
+            @PathVariable Long poolId) {
+        AsignacionRolDTO asignacion = rolPoolService.obtenerAsignacionUsuario(usuarioDestinoId, poolId);
         if (asignacion == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("mensaje", "El usuario no tiene ningún rol asignado en este pool"));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-        return ResponseEntity.ok(asignacion.getRol());
+        return ResponseEntity.ok(asignacion);
     }
 }

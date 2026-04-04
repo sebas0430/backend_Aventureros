@@ -1,12 +1,17 @@
 package com.edu.javeriana.backend.service.interfaces;
 
-import com.edu.javeriana.backend.model.Documento;
+import com.edu.javeriana.backend.dto.DocumentoDTO;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 public interface IDocumentoService {
-    Documento subirDocumento(Long procesoId, MultipartFile archivo);
-    List<Documento> listarDocumentosPorProceso(Long procesoId);
+
+    DocumentoDTO subirDocumento(Long procesoId, MultipartFile archivo);
+
+    List<DocumentoDTO> listarDocumentosPorProceso(Long procesoId);
+
     void eliminarDocumento(Long documentoId);
+
+    DocumentoDTO actualizarDocumento(Long documentoId, MultipartFile archivo);
 }

@@ -1,7 +1,6 @@
 package com.edu.javeriana.backend.service;
 
-import com.edu.javeriana.backend.service.interfaces.*;
-
+import com.edu.javeriana.backend.service.interfaces.ILaneService;
 import com.edu.javeriana.backend.dto.LaneEdicionDTO;
 import com.edu.javeriana.backend.dto.LaneRegistroDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
@@ -10,27 +9,40 @@ import com.edu.javeriana.backend.model.Lane;
 import com.edu.javeriana.backend.model.Pool;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.LaneRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import com.edu.javeriana.backend.service.interfaces.IPoolService;
+import com.edu.javeriana.backend.service.interfaces.IUsuarioService;
 import org.springframework.context.annotation.Lazy;
+import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class LaneService implements ILaneService {
 
     private final LaneRepository laneRepository;
-    private final @Lazy IPoolService poolService;
-    private final @Lazy IUsuarioService usuarioService;
+    private final IPoolService poolService;
+    private final IUsuarioService usuarioService;
+    private final ModelMapper modelMapper;
+
+    public LaneService(LaneRepository laneRepository,
+                       @Lazy IPoolService poolService,
+                       @Lazy IUsuarioService usuarioService,
+                       ModelMapper modelMapper) {
+        this.laneRepository   = laneRepository;
+        this.poolService      = poolService;
+        this.usuarioService   = usuarioService;
+        this.modelMapper      = modelMapper;
+    }
 
     @Override
     @Transactional
-    public Lane crearLane(LaneRegistroDTO dto) {
-        Pool pool = poolService.obtenerPoolPorId(dto.getPoolId());
+    public LaneRegistroDTO crearLane(LaneRegistroDTO dto) {
+        Pool pool = poolService.obtenerPoolEntity(dto.getPoolId());
 
         validarAccesoYManejoDeLane(dto.getUsuarioId(), pool.getEmpresa().getId(), true);
 
@@ -45,12 +57,15 @@ public class LaneService implements ILaneService {
         log.info("AUDITORIA: Usuario {} (ADMIN) registró el Nuevo Lane '{}' (ID={}) dentro del Pool ID={}",
                 dto.getUsuarioId(), laneGuardado.getNombre(), laneGuardado.getId(), pool.getId());
 
-        return laneGuardado;
+        LaneRegistroDTO response = modelMapper.map(laneGuardado, LaneRegistroDTO.class);
+        response.setPoolId(laneGuardado.getPool().getId());
+        response.setUsuarioId(dto.getUsuarioId());
+        return response;
     }
 
     @Override
     @Transactional
-    public Lane editarLane(Long id, LaneEdicionDTO dto) {
+    public LaneEdicionDTO editarLane(Long id, LaneEdicionDTO dto) {
         Lane lane = laneRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Lane no encontrado"));
 
@@ -64,7 +79,9 @@ public class LaneService implements ILaneService {
         log.info("AUDITORIA: Usuario {} (ADMIN) actualizó el Lane ID={} (Nuevo Nombre: '{}')",
                 dto.getUsuarioId(), laneActualizado.getId(), laneActualizado.getNombre());
 
-        return laneActualizado;
+        LaneEdicionDTO response = modelMapper.map(laneActualizado, LaneEdicionDTO.class);
+        response.setUsuarioId(dto.getUsuarioId());
+        return response;
     }
 
     @Override
@@ -82,25 +99,30 @@ public class LaneService implements ILaneService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Lane> listarLanesPorPool(Long poolId, Long usuarioId) {
-        Pool pool = poolService.obtenerPoolPorId(poolId);
+    public List<LaneRegistroDTO> listarLanesPorPool(Long poolId, Long usuarioId) {
+        Pool pool = poolService.obtenerPoolEntity(poolId);
 
         validarAccesoYManejoDeLane(usuarioId, pool.getEmpresa().getId(), false);
 
-        return laneRepository.findByPoolId(poolId);
+        return laneRepository.findByPoolId(poolId)
+                .stream()
+                .map(lane -> {
+                    LaneRegistroDTO dto = modelMapper.map(lane, LaneRegistroDTO.class);
+                    dto.setPoolId(lane.getPool().getId());
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 
     private void validarAccesoYManejoDeLane(Long usuarioId, Long empresaPoolId, boolean requiresAdmin) {
-        Usuario usuario = usuarioService.obtenerUsuarioPorId(usuarioId);
+        Usuario usuario = usuarioService.obtenerUsuarioEntity(usuarioId);
 
         if (!usuario.getEmpresa().getId().equals(empresaPoolId)) {
-            throw new BusinessRuleException(
-                    "No perteneces a la empresa de la cual intentas consultar o modificar este Lane");
+            throw new BusinessRuleException("No perteneces a la empresa de la cual intentas consultar o modificar este Lane");
         }
 
         if (requiresAdmin && !"ADMINISTRADOR_EMPRESA".equals(usuario.getRol())) {
-            throw new BusinessRuleException(
-                    "No tienes el rol de ADMINISTRADOR_EMPRESA para modificar los Lanes (roles/departamentos) de los pools");
+            throw new BusinessRuleException("No tienes el rol de ADMINISTRADOR_EMPRESA para modificar los Lanes (roles/departamentos) de los pools");
         }
     }
 }
