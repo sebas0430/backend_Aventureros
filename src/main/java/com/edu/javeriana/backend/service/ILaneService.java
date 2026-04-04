@@ -2,7 +2,6 @@ package com.edu.javeriana.backend.service;
 
 import com.edu.javeriana.backend.dto.LaneEdicionDTO;
 import com.edu.javeriana.backend.dto.LaneRegistroDTO;
-import com.edu.javeriana.backend.model.Lane;
 
 import java.util.List;
 
