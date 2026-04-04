@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class DocumentoService implements IDocumentoService {
 
@@ -75,9 +78,13 @@ public class DocumentoService implements IDocumentoService {
 
             DocumentoDTO dto = modelMapper.map(guardado, DocumentoDTO.class);
             dto.setProcesoId(guardado.getProceso().getId());
+            
+            log.info("Documento {} subido exitosamente al proceso {}", nombreOriginal, procesoId);
+            
             return dto;
 
         } catch (IOException e) {
+            log.error("Error al guardar el archivo: {}", e.getMessage(), e);
             throw new RuntimeException("Error al guardar el archivo", e);
         }
     }
@@ -108,7 +115,9 @@ public class DocumentoService implements IDocumentoService {
             Path filePath = Paths.get(documento.getRutaArchivo());
             Files.deleteIfExists(filePath);
             documentoRepository.delete(documento);
+            log.info("Documento {} eliminado exitosamente", documentoId);
         } catch (IOException e) {
+            log.error("Error al eliminar el archivo físico: {}", e.getMessage(), e);
             throw new RuntimeException("Error al eliminar el archivo físico", e);
         }
     }
@@ -148,9 +157,13 @@ public DocumentoDTO actualizarDocumento(Long documentoId, MultipartFile archivo)
 
         DocumentoDTO dto = modelMapper.map(actualizado, DocumentoDTO.class);
         dto.setProcesoId(actualizado.getProceso().getId());
+        
+        log.info("Documento {} actualizado exitosamente con nuevo archivo {}", documentoId, nombreOriginal);
+        
         return dto;
 
     } catch (IOException e) {
+        log.error("Error al actualizar el archivo: {}", e.getMessage(), e);
         throw new RuntimeException("Error al actualizar el archivo", e);
     }
 }

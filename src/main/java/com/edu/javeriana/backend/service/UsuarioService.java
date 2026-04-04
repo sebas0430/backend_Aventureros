@@ -16,6 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class UsuarioService implements IUsuarioService {
 
@@ -54,6 +57,8 @@ public class UsuarioService implements IUsuarioService {
 
         emailService.enviarInvitacion(correo, password, empresa.getNombre(), rol);
 
+        log.info("Usuario invitado exitosamente: {} con rol {} para la empresa {}", correo, rol, empresa.getNombre());
+
         UsuarioRegistroDTO response = modelMapper.map(guardado, UsuarioRegistroDTO.class);
         response.setCorreo(guardado.getUsername());
         response.setEmpresaId(guardado.getEmpresa().getId());
@@ -77,6 +82,9 @@ public class UsuarioService implements IUsuarioService {
         UsuarioLoginDTO response = modelMapper.map(usuario, UsuarioLoginDTO.class);
         response.setCorreo(usuario.getUsername());
         response.setEmpresaId(usuario.getEmpresa().getId());
+        
+        log.info("Inicio de sesión exitoso para usuario: {}", correo);
+        
         return response;
     }
 
@@ -133,6 +141,7 @@ public class UsuarioService implements IUsuarioService {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         usuarioRepository.delete(usuario);
+        log.info("Usuario {} eliminado exitosamente", id);
     }
 
     @Override

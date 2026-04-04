@@ -20,6 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class ArcoService implements IArcoService {
 
@@ -70,6 +73,8 @@ public class ArcoService implements IArcoService {
                 .build();
 
         Arco guardado = arcoRepository.save(arco);
+        
+        log.info("Arco {} creado exitosamente en proceso {}", guardado.getId(), proceso.getId());
 
         // Mapear entidad → DTO existente
         ArcoRegistroDTO response = modelMapper.map(guardado, ArcoRegistroDTO.class);
@@ -114,6 +119,8 @@ public class ArcoService implements IArcoService {
         arco.setEtiqueta(dto.getEtiqueta());
 
         Arco guardado = arcoRepository.save(arco);
+        
+        log.info("Arco {} editado exitosamente", guardado.getId());
 
         // Mapear entidad → DTO existente
         ArcoEdicionDTO response = modelMapper.map(guardado, ArcoEdicionDTO.class);
@@ -160,6 +167,7 @@ public class ArcoService implements IArcoService {
         Arco arco = arcoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Arco no encontrado"));
         arcoRepository.delete(arco);
+        log.info("Arco {} eliminado exitosamente por el usuario {}", id, usuarioId);
     }
 
     @Override
@@ -170,6 +178,7 @@ public class ArcoService implements IArcoService {
             throw new ResourceNotFoundException("Proceso no encontrado");
         }
         arcoRepository.deleteByProcesoId(procesoId);
+        log.info("Todos los arcos del proceso {} han sido eliminados por el usuario admin {}", procesoId, usuarioId);
     }
 
     @Override
@@ -180,6 +189,8 @@ public class ArcoService implements IArcoService {
         
         arcoRepository.deleteAll(arcosOrigen);
         arcoRepository.deleteAll(arcosDestino);
+        
+        log.info("Se han eliminado los arcos asociados al nodo {} de tipo {} en el proceso {}", nodoId, tipoNodo, procesoId);
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────────
