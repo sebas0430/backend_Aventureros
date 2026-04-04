@@ -1,7 +1,6 @@
-package com.edu.javeriana.backend.service.interfaces;
+package com.edu.javeriana.backend.service;
 
 import com.edu.javeriana.backend.model.InstanciaProceso;
-import com.edu.javeriana.backend.model.EstadoInstancia;
 import java.util.List;
 
 public interface IInstanciaProcesoService {

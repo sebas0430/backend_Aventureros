@@ -1,7 +1,7 @@
 package com.edu.javeriana.backend.controller;
 
-import com.edu.javeriana.backend.model.Documento;
-import com.edu.javeriana.backend.service.interfaces.IDocumentoService;
+import com.edu.javeriana.backend.dto.DocumentoDTO;
+import com.edu.javeriana.backend.service.IDocumentoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,33 +15,33 @@ import java.util.Map;
 @RequestMapping("/api/documentos")
 @RequiredArgsConstructor
 public class DocumentoController {
-
+ //controlador para manejar las operaciones relacionadas con los documentos, como subir, actualizar, listar y eliminar documentos asociados a procesos.
     private final IDocumentoService documentoService;
 
     @PostMapping("/proceso/{procesoId}")
-    public ResponseEntity<?> subirDocumento(
+    public ResponseEntity<DocumentoDTO> subirDocumento(
             @PathVariable Long procesoId,
             @RequestParam("archivo") MultipartFile archivo) {
 
-        try {
-            Documento doc = documentoService.subirDocumento(procesoId, archivo);
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                    "id", doc.getId(),
-                    "nombreArchivo", doc.getNombreArchivo(),
-                    "mensaje", "Documento subido exitosamente"
-            ));
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        DocumentoDTO doc = documentoService.subirDocumento(procesoId, archivo);
+        return ResponseEntity.status(HttpStatus.CREATED).body(doc);
     }
 
+    @PutMapping("/{id}")
+public ResponseEntity<DocumentoDTO> actualizarDocumento(
+        @PathVariable Long id,
+        @RequestParam("archivo") MultipartFile archivo) {
+    DocumentoDTO doc = documentoService.actualizarDocumento(id, archivo);
+    return ResponseEntity.ok(doc);
+}
+
     @GetMapping("/proceso/{procesoId}")
-    public ResponseEntity<List<Documento>> listarDocumentos(@PathVariable Long procesoId) {
+    public ResponseEntity<List<DocumentoDTO>> listarDocumentos(@PathVariable Long procesoId) {
         return ResponseEntity.ok(documentoService.listarDocumentosPorProceso(procesoId));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminarDocumento(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> eliminarDocumento(@PathVariable Long id) {
         documentoService.eliminarDocumento(id);
         return ResponseEntity.ok(Map.of("mensaje", "Documento eliminado exitosamente"));
     }

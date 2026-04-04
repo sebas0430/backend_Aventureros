@@ -1,4 +1,4 @@
-package com.edu.javeriana.backend.service.interfaces;
+package com.edu.javeriana.backend.service;
 
 import com.edu.javeriana.backend.model.Proceso;
 import com.edu.javeriana.backend.model.Usuario;

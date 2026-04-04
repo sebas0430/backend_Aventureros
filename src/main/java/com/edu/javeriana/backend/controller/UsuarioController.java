@@ -1,15 +1,14 @@
 package com.edu.javeriana.backend.controller;
 
+import com.edu.javeriana.backend.dto.UsuarioLoginDTO;
 import com.edu.javeriana.backend.dto.UsuarioRegistroDTO;
-import com.edu.javeriana.backend.model.Usuario;
-import com.edu.javeriana.backend.service.interfaces.IUsuarioService;
-import jakarta.validation.Valid;
+import com.edu.javeriana.backend.service.IUsuarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -20,40 +19,47 @@ public class UsuarioController {
     private final IUsuarioService usuarioService;
 
     @PostMapping("/invitar")
-    public ResponseEntity<?> invitarUsuario(@Valid @RequestBody UsuarioRegistroDTO dto) {
-        try {
-            Usuario nuevoUsuario = usuarioService.invitarUsuario(dto);
+    public ResponseEntity<UsuarioRegistroDTO> invitarUsuario(@RequestBody Map<String, Object> body) {
+        String correo   = (String) body.get("correo");
+        String password = (String) body.get("password");
+        String rol      = (String) body.get("rol");
+        Long empresaId  = Long.valueOf(body.get("empresaId").toString());
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("id", nuevoUsuario.getId());
-            response.put("correo", nuevoUsuario.getUsername());
-            response.put("rol", nuevoUsuario.getRol());
-            response.put("mensaje", "Usuario registrado exitosamente en la empresa");
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(usuarioService.invitarUsuario(correo, password, rol, empresaId));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> iniciarSesion(@Valid @RequestBody com.edu.javeriana.backend.dto.UsuarioLoginDTO dto) {
-        try {
-            Usuario usuario = usuarioService.iniciarSesion(dto);
+    public ResponseEntity<UsuarioLoginDTO> iniciarSesion(@RequestBody Map<String, String> body) {
+        String correo   = body.get("correo");
+        String password = body.get("password");
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("id", usuario.getId());
-            response.put("correo", usuario.getUsername());
-            response.put("rol", usuario.getRol());
-            response.put("empresa_id", usuario.getEmpresa().getId());
-            response.put("mensaje", "Inicio de sesión exitoso");
+        return ResponseEntity.ok(usuarioService.iniciarSesion(correo, password));
+    }
 
-            return ResponseEntity.ok(response);
+    @GetMapping("/{id}")
+    public ResponseEntity<UsuarioRegistroDTO> obtenerUsuario(@PathVariable Long id) {
+        return ResponseEntity.ok(usuarioService.obtenerUsuario(id));
+    }
 
-        } catch (IllegalArgumentException e) {
-            // Se debe retornar UNAUTHORIZED o BAD_REQUEST dependiendo del criterio, 401 es lo habitual para login fallido
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-        }
+    @GetMapping("/empresa/{empresaId}")
+    public ResponseEntity<List<UsuarioRegistroDTO>> listarPorEmpresa(@PathVariable Long empresaId) {
+        return ResponseEntity.ok(usuarioService.listarPorEmpresa(empresaId));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UsuarioRegistroDTO> actualizarUsuario(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body) {
+        String rol     = (String) body.get("rol");
+        Boolean activo = body.get("activo") != null ? (Boolean) body.get("activo") : null;
+
+        return ResponseEntity.ok(usuarioService.actualizarUsuario(id, rol, activo));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, String>> eliminarUsuario(@PathVariable Long id) {
+        usuarioService.eliminarUsuario(id);
+        return ResponseEntity.ok(Map.of("mensaje", "Usuario eliminado exitosamente"));
     }
 }

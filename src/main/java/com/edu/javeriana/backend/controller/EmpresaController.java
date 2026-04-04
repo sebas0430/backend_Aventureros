@@ -1,16 +1,17 @@
 package com.edu.javeriana.backend.controller;
 
+import com.edu.javeriana.backend.dto.EmpresaEdicionDTO;
 import com.edu.javeriana.backend.dto.EmpresaRegistroDTO;
-import com.edu.javeriana.backend.model.Empresa;
-import com.edu.javeriana.backend.service.interfaces.IEmpresaService;
+import com.edu.javeriana.backend.service.IEmpresaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/empresas")
@@ -20,21 +21,32 @@ public class EmpresaController {
     private final IEmpresaService empresaService;
 
     @PostMapping
-    public ResponseEntity<?> registrarEmpresa(@Valid @RequestBody EmpresaRegistroDTO dto) {
-        try {
-            Empresa nuevaEmpresa = empresaService.registrarEmpresa(dto);
+    public ResponseEntity<EmpresaRegistroDTO> registrarEmpresa(@Valid @RequestBody EmpresaRegistroDTO dto) {
+        EmpresaRegistroDTO response = empresaService.registrarEmpresa(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
 
-            // Retornamos un Response básico, en producción usar un Mapper hacia un DTO de
-            // salida
-            Map<String, Object> response = new HashMap<>();
-            response.put("id", nuevaEmpresa.getId());
-            response.put("nombre", nuevaEmpresa.getNombre());
-            response.put("mensaje", "Empresa registrada exitosamente");
+    @PutMapping("/{id}")
+    public ResponseEntity<EmpresaEdicionDTO> editarEmpresa(
+            @PathVariable Long id,
+            @Valid @RequestBody EmpresaEdicionDTO dto) {
+        EmpresaEdicionDTO response = empresaService.editarEmpresa(id, dto);
+        return ResponseEntity.ok(response);
+    }
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    @GetMapping("/{id}")
+    public ResponseEntity<EmpresaRegistroDTO> obtenerEmpresa(@PathVariable Long id) {
+        return ResponseEntity.ok(empresaService.obtenerEmpresa(id));
+    }
 
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    @GetMapping
+    public ResponseEntity<List<EmpresaRegistroDTO>> listarEmpresas() {
+        return ResponseEntity.ok(empresaService.listarEmpresas());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, String>> eliminarEmpresa(@PathVariable Long id) {
+        empresaService.eliminarEmpresa(id);
+        return ResponseEntity.ok(Map.of("mensaje", "Empresa eliminada exitosamente"));
     }
 }

@@ -2,8 +2,9 @@ package com.edu.javeriana.backend.controller;
 
 import com.edu.javeriana.backend.dto.LaneEdicionDTO;
 import com.edu.javeriana.backend.dto.LaneRegistroDTO;
-import com.edu.javeriana.backend.model.Lane;
-import com.edu.javeriana.backend.service.interfaces.ILaneService;
+import com.edu.javeriana.backend.exception.BusinessRuleException;
+import com.edu.javeriana.backend.exception.ResourceNotFoundException;
+import com.edu.javeriana.backend.service.ILaneService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -11,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/lanes")
@@ -21,37 +21,47 @@ public class LaneController {
     private final ILaneService laneService;
 
     @PostMapping
-    public ResponseEntity<?> crearLane(@Valid @RequestBody LaneRegistroDTO dto) {
-        Lane lane = laneService.crearLane(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                "id", lane.getId(),
-                "nombre", lane.getNombre(),
-                "poolId", lane.getPool().getId(),
-                "mensaje", "Lane (Swimlane) creado exitosamente"
-        ));
+    public ResponseEntity<LaneRegistroDTO> crearLane(@Valid @RequestBody LaneRegistroDTO dto) {
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED).body(laneService.crearLane(dto));
+        } catch (BusinessRuleException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> editarLane(@PathVariable Long id, @Valid @RequestBody LaneEdicionDTO dto) {
-        Lane lane = laneService.editarLane(id, dto);
-        return ResponseEntity.ok(Map.of(
-                "id", lane.getId(),
-                "nombre", lane.getNombre(),
-                "poolId", lane.getPool().getId(),
-                "mensaje", "Lane editado exitosamente"
-        ));
+    public ResponseEntity<LaneEdicionDTO> editarLane(@PathVariable Long id, @Valid @RequestBody LaneEdicionDTO dto) {
+        try {
+            return ResponseEntity.ok(laneService.editarLane(id, dto));
+        } catch (BusinessRuleException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminarLane(@PathVariable Long id, @RequestParam Long usuarioId) {
-        laneService.eliminarLane(id, usuarioId);
-        return ResponseEntity.ok(Map.of("mensaje", "Lane eliminado exitosamente"));
+    public ResponseEntity<Void> eliminarLane(@PathVariable Long id, @RequestParam Long usuarioId) {
+        try {
+            laneService.eliminarLane(id, usuarioId);
+            return ResponseEntity.noContent().build();
+        } catch (BusinessRuleException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     @GetMapping("/pool/{poolId}")
-    public ResponseEntity<List<Lane>> listarLanesPorPool(
-            @PathVariable Long poolId, 
-            @RequestParam Long usuarioId) {
-        return ResponseEntity.ok(laneService.listarLanesPorPool(poolId, usuarioId));
+    public ResponseEntity<List<LaneRegistroDTO>> listarLanesPorPool(@PathVariable Long poolId, @RequestParam Long usuarioId) {
+        try {
+            return ResponseEntity.ok(laneService.listarLanesPorPool(poolId, usuarioId));
+        } catch (BusinessRuleException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 }

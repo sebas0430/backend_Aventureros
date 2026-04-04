@@ -1,10 +1,9 @@
 package com.edu.javeriana.backend.controller;
 
 import com.edu.javeriana.backend.dto.EventoMensajeRegistroDTO;
+import com.edu.javeriana.backend.dto.MensajeEjecucionDTO;
 import com.edu.javeriana.backend.dto.MensajeLanzarDTO;
-import com.edu.javeriana.backend.model.EventoMensaje;
-import com.edu.javeriana.backend.model.MensajeEjecucion;
-import com.edu.javeriana.backend.service.interfaces.IEventoMensajeService;
+import com.edu.javeriana.backend.service.IEventoMensajeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,51 +21,35 @@ public class EventoMensajeController {
     private final IEventoMensajeService eventoMensajeService;
 
     @PostMapping
-    public ResponseEntity<?> crearEvento(@Valid @RequestBody EventoMensajeRegistroDTO dto) {
-        try {
-            EventoMensaje evento = eventoMensajeService.crearEvento(dto);
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                    "id", evento.getId(),
-                    "nombreMensaje", evento.getNombreMensaje(),
-                    "tipo", evento.getTipo(),
-                    "procesoId", evento.getProceso().getId(),
-                    "mensaje", "Evento configurado exitosamente"
-            ));
-        } catch (com.edu.javeriana.backend.exception.BusinessRuleException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<EventoMensajeRegistroDTO> crearEvento(
+            @Valid @RequestBody EventoMensajeRegistroDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(eventoMensajeService.crearEvento(dto));
     }
 
     @GetMapping("/proceso/{procesoId}")
-    public ResponseEntity<List<EventoMensaje>> listarPorProceso(@PathVariable Long procesoId) {
+    public ResponseEntity<List<EventoMensajeRegistroDTO>> listarPorProceso(
+            @PathVariable Long procesoId) {
         return ResponseEntity.ok(eventoMensajeService.listarPorProceso(procesoId));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminarEvento(@PathVariable Long id, @RequestParam Long usuarioId) {
-        try {
-            eventoMensajeService.eliminarEvento(id, usuarioId);
-            return ResponseEntity.ok(Map.of("mensaje", "Evento de mensaje eliminado correctamente"));
-        } catch (com.edu.javeriana.backend.exception.BusinessRuleException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<Map<String, String>> eliminarEvento(
+            @PathVariable Long id,
+            @RequestParam Long usuarioId) {
+        eventoMensajeService.eliminarEvento(id, usuarioId);
+        return ResponseEntity.ok(Map.of("mensaje", "Evento de mensaje eliminado correctamente"));
     }
 
     @PostMapping("/lanzar")
-    public ResponseEntity<?> lanzarMensajeThrow(@Valid @RequestBody MensajeLanzarDTO dto) {
-        try {
-            List<MensajeEjecucion> logs = eventoMensajeService.lanzarMensaje(dto);
-            return ResponseEntity.ok(Map.of(
-                    "mensaje", "Lanzamiento procesado (Revisar logs)",
-                    "impactos", logs
-            ));
-        } catch (com.edu.javeriana.backend.exception.BusinessRuleException e) {
-            return ResponseEntity.badRequest().body(Map.of("error_lanzamiento", e.getMessage()));
-        }
+    public ResponseEntity<List<MensajeEjecucionDTO>> lanzarMensajeThrow(
+            @Valid @RequestBody MensajeLanzarDTO dto) {
+        return ResponseEntity.ok(eventoMensajeService.lanzarMensaje(dto));
     }
-    
+
     @GetMapping("/logs/{eventoId}")
-    public ResponseEntity<List<MensajeEjecucion>> listarLogsDeLanzamiento(@PathVariable Long eventoId) {
+    public ResponseEntity<List<MensajeEjecucionDTO>> listarLogsDeLanzamiento(
+            @PathVariable Long eventoId) {
         return ResponseEntity.ok(eventoMensajeService.listarHistorialPorEventoOrigen(eventoId));
     }
 }
