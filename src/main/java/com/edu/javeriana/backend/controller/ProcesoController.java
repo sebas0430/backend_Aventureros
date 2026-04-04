@@ -1,5 +1,6 @@
 package com.edu.javeriana.backend.controller;
 
+import com.edu.javeriana.backend.dto.ProcesoCompartirDTO;
 import com.edu.javeriana.backend.dto.ProcesoEdicionDTO;
 import com.edu.javeriana.backend.dto.ProcesoRegistroDTO;
 import com.edu.javeriana.backend.model.EstadoProceso;
@@ -52,12 +53,8 @@ public class ProcesoController {
 
     // GET /api/procesos/{id}
     @GetMapping("/{id}")
-    public ResponseEntity<?> obtenerProceso(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(procesoService.obtenerProcesoPorId(id));
-        } catch (com.edu.javeriana.backend.exception.ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+    public ResponseEntity<Proceso> obtenerProceso(@PathVariable Long id) {
+        return ResponseEntity.ok(procesoService.obtenerProcesoPorId(id));
     }
 
     // GET /api/procesos/autor/{autorId}
@@ -82,35 +79,23 @@ public class ProcesoController {
 
     // PUT /api/procesos/{id}
     @PutMapping("/{id}")
-    public ResponseEntity<?> editarProceso(
+    public ResponseEntity<ProcesoEdicionDTO> editarProceso(
             @PathVariable Long id,
-            @Valid @RequestBody com.edu.javeriana.backend.dto.ProcesoEdicionDTO dto) {
-        try {
-            Proceso actualizado = procesoService.editarProceso(id, dto);
-            ProcesoEdicionDTO respuesta = new ProcesoEdicionDTO();
-            respuesta.setNombre(actualizado.getNombre());
-            respuesta.setDescripcion(actualizado.getDescripcion());
-            respuesta.setCategoria(actualizado.getCategoria());
-            respuesta.setUsuarioId(dto.getUsuarioId());
-            return ResponseEntity.ok(respuesta);
-        } catch (com.edu.javeriana.backend.exception.BusinessRuleException | IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (com.edu.javeriana.backend.exception.ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+            @Valid @RequestBody ProcesoEdicionDTO dto) {
+        Proceso actualizado = procesoService.editarProceso(id, dto);
+        ProcesoEdicionDTO respuesta = new ProcesoEdicionDTO();
+        respuesta.setNombre(actualizado.getNombre());
+        respuesta.setDescripcion(actualizado.getDescripcion());
+        respuesta.setCategoria(actualizado.getCategoria());
+        respuesta.setUsuarioId(dto.getUsuarioId());
+        return ResponseEntity.ok(respuesta);
     }
 
     // DELETE /api/procesos/{id}
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminarProceso(@PathVariable Long id, @RequestParam Long usuarioId) {
-        try {
-            procesoService.eliminarProceso(id, usuarioId);
-            return ResponseEntity.ok(Map.of("mensaje", "Proceso invalidado/eliminado exitosamente"));
-        } catch (com.edu.javeriana.backend.exception.BusinessRuleException | IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (com.edu.javeriana.backend.exception.ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+    public ResponseEntity<Void> eliminarProceso(@PathVariable Long id, @RequestParam Long usuarioId) {
+        procesoService.eliminarProceso(id, usuarioId);
+        return ResponseEntity.noContent().build();
     }
 
     // PATCH /api/procesos/{id}/estado
@@ -131,46 +116,29 @@ public class ProcesoController {
 
     // POST /api/procesos/{id}/compartir
     @PostMapping("/{id}/compartir")
-    public ResponseEntity<?> compartirProceso(
+    public ResponseEntity<ProcesoCompartirDTO> compartirProceso(
             @PathVariable Long id,
-            @Valid @RequestBody com.edu.javeriana.backend.dto.ProcesoCompartirDTO dto) {
-        try {
-            procesoService.compartirProceso(id, dto);
-            return ResponseEntity.ok(Map.of("mensaje", "Proceso compartido exitosamente con el Pool."));
-        } catch (com.edu.javeriana.backend.exception.BusinessRuleException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (com.edu.javeriana.backend.exception.ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+            @Valid @RequestBody ProcesoCompartirDTO dto) {
+        procesoService.compartirProceso(id, dto);
+        return ResponseEntity.ok(dto);
     }
 
     // DELETE /api/procesos/{id}/compartir/{poolDestinoId}
     @DeleteMapping("/{id}/compartir/{poolDestinoId}")
-    public ResponseEntity<?> quitarComparticionProceso(
+    public ResponseEntity<Void> quitarComparticionProceso(
             @PathVariable Long id,
             @PathVariable Long poolDestinoId,
             @RequestParam Long usuarioId) {
-        try {
-            procesoService.quitarComparticionProceso(id, poolDestinoId, usuarioId);
-            return ResponseEntity.ok(Map.of("mensaje", "Compartición revocada exitosamente."));
-        } catch (com.edu.javeriana.backend.exception.BusinessRuleException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (com.edu.javeriana.backend.exception.ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+        procesoService.quitarComparticionProceso(id, poolDestinoId, usuarioId);
+        return ResponseEntity.noContent().build();
     }
+ 
 
     // GET /api/procesos/compartidos/{poolId}
     @GetMapping("/compartidos/{poolId}")
-    public ResponseEntity<?> listarProcesosCompartidosConPool(
+    public ResponseEntity<List<Proceso>> listarProcesosCompartidosConPool(
             @PathVariable Long poolId,
             @RequestParam Long usuarioId) {
-        try {
-            return ResponseEntity.ok(procesoService.listarProcesosCompartidosConPool(poolId, usuarioId));
-        } catch (com.edu.javeriana.backend.exception.BusinessRuleException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (com.edu.javeriana.backend.exception.ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+        return ResponseEntity.ok(procesoService.listarProcesosCompartidosConPool(poolId, usuarioId));
     }
 }
