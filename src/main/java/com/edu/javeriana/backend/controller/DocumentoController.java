@@ -15,7 +15,7 @@ import java.util.Map;
 @RequestMapping("/api/documentos")
 @RequiredArgsConstructor
 public class DocumentoController {
-
+ //controlador para manejar las operaciones relacionadas con los documentos, como subir, actualizar, listar y eliminar documentos asociados a procesos.
     private final IDocumentoService documentoService;
 
     @PostMapping("/proceso/{procesoId}")

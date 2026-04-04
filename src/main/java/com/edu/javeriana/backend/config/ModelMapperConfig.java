@@ -12,3 +12,4 @@ public class ModelMapperConfig {
         return mapper;
     }
 }
+//moldeo de datos, para mapear objetos de un tipo a otro, por ejemplo de entidad a dto o viceversa, para evitar escribir codigo repetitivo de asignacion de campos.
