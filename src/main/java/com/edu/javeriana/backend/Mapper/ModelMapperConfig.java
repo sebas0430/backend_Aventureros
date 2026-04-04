@@ -1,4 +1,4 @@
-package com.edu.javeriana.backend.config;
+package com.edu.javeriana.backend.Mapper;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;
