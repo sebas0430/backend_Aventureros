@@ -6,7 +6,6 @@ import com.edu.javeriana.backend.dto.ProcesoRegistroDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
 import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.model.EstadoProceso;
-import com.edu.javeriana.backend.model.Proceso;
 import com.edu.javeriana.backend.service.IProcesoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +33,7 @@ public class ProcesoController {
     }
 
     @GetMapping("/empresa/{empresaId}")
-    public ResponseEntity<?> listarPorEmpresa(
+    public ResponseEntity<List<ProcesoRegistroDTO>> listarPorEmpresa(
             @PathVariable Long empresaId,
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) String categoria) {
@@ -44,12 +43,12 @@ public class ProcesoController {
             }
             return ResponseEntity.ok(procesoService.listarPorEmpresa(empresaId));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().build();
         }
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Proceso> obtenerProceso(@PathVariable Long id) {
+    public ResponseEntity<ProcesoRegistroDTO> obtenerProceso(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(procesoService.obtenerProcesoPorId(id));
         } catch (ResourceNotFoundException e) {
@@ -58,7 +57,7 @@ public class ProcesoController {
     }
 
     @GetMapping("/autor/{autorId}")
-    public ResponseEntity<List<Proceso>> listarPorAutor(@PathVariable Long autorId) {
+    public ResponseEntity<List<ProcesoRegistroDTO>> listarPorAutor(@PathVariable Long autorId) {
         return ResponseEntity.ok(procesoService.listarPorAutor(autorId));
     }
 
@@ -74,7 +73,9 @@ public class ProcesoController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProcesoEdicionDTO> editarProceso(@PathVariable Long id, @Valid @RequestBody ProcesoEdicionDTO dto) {
+    public ResponseEntity<ProcesoEdicionDTO> editarProceso(
+            @PathVariable Long id,
+            @Valid @RequestBody ProcesoEdicionDTO dto) {
         try {
             return ResponseEntity.ok(procesoService.editarProceso(id, dto));
         } catch (BusinessRuleException | IllegalArgumentException e) {
@@ -141,7 +142,7 @@ public class ProcesoController {
     }
 
     @GetMapping("/compartidos/{poolId}")
-    public ResponseEntity<List<Proceso>> listarProcesosCompartidosConPool(
+    public ResponseEntity<List<ProcesoRegistroDTO>> listarProcesosCompartidosConPool(
             @PathVariable Long poolId,
             @RequestParam Long usuarioId) {
         try {

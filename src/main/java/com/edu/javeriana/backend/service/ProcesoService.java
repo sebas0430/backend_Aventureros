@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -35,14 +36,23 @@ public class ProcesoService implements IProcesoService {
                           AsignacionRolPoolRepository asignacionRolPoolRepository,
                           HistorialProcesoRepository historialProcesoRepository,
                           ModelMapper modelMapper) {
-        this.procesoRepository          = procesoRepository;
-        this.empresaRepository          = empresaRepository;
-        this.usuarioRepository          = usuarioRepository;
-        this.poolRepository             = poolRepository;
+        this.procesoRepository           = procesoRepository;
+        this.empresaRepository           = empresaRepository;
+        this.usuarioRepository           = usuarioRepository;
+        this.poolRepository              = poolRepository;
         this.procesoCompartidoRepository = procesoCompartidoRepository;
         this.asignacionRolPoolRepository = asignacionRolPoolRepository;
         this.historialProcesoRepository  = historialProcesoRepository;
-        this.modelMapper                = modelMapper;
+        this.modelMapper                 = modelMapper;
+    }
+
+    // ─── Helper: Proceso → ProcesoRegistroDTO ───────────────────────────────
+    private ProcesoRegistroDTO toRegistroDTO(Proceso p) {
+        ProcesoRegistroDTO dto = modelMapper.map(p, ProcesoRegistroDTO.class);
+        dto.setEmpresaId(p.getEmpresa().getId());
+        dto.setAutorId(p.getAutor().getId());
+        if (p.getPool() != null) dto.setPoolId(p.getPool().getId());
+        return dto;
     }
 
     @Override
@@ -65,9 +75,8 @@ public class ProcesoService implements IProcesoService {
         if (dto.getPoolId() != null) {
             poolAsignado = poolRepository.findById(dto.getPoolId())
                     .orElseThrow(() -> new IllegalArgumentException("Pool no encontrado"));
-            if (!poolAsignado.getEmpresa().getId().equals(empresa.getId())) {
+            if (!poolAsignado.getEmpresa().getId().equals(empresa.getId()))
                 throw new IllegalArgumentException("El pool no pertenece a la misma empresa");
-            }
         } else {
             poolAsignado = poolRepository.findFirstByEmpresaIdOrderByIdAsc(empresa.getId())
                     .orElseThrow(() -> new IllegalArgumentException("La empresa no tiene ningún pool configurado"));
@@ -78,37 +87,38 @@ public class ProcesoService implements IProcesoService {
 
         proceso.setEstado(EstadoProceso.BORRADOR);
 
-        Proceso guardado = procesoRepository.save(proceso);
-
-        ProcesoRegistroDTO response = modelMapper.map(guardado, ProcesoRegistroDTO.class);
-        response.setEmpresaId(guardado.getEmpresa().getId());
-        response.setAutorId(guardado.getAutor().getId());
-        response.setPoolId(guardado.getPool().getId());
-        return response;
+        return toRegistroDTO(procesoRepository.save(proceso));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Proceso> listarPorEmpresa(Long empresaId) {
-        return procesoRepository.findByEmpresaId(empresaId);
+    public List<ProcesoRegistroDTO> listarPorEmpresa(Long empresaId) {
+        return procesoRepository.findByEmpresaId(empresaId)
+                .stream()
+                .map(this::toRegistroDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Proceso> listarPorAutor(Long autorId) {
-        return procesoRepository.findByAutorId(autorId);
+    public List<ProcesoRegistroDTO> listarPorAutor(Long autorId) {
+        return procesoRepository.findByAutorId(autorId)
+                .stream()
+                .map(this::toRegistroDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Proceso obtenerProcesoPorId(Long id) {
-        return procesoRepository.findById(id)
+    public ProcesoRegistroDTO obtenerProcesoPorId(Long id) {
+        Proceso proceso = procesoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado"));
+        return toRegistroDTO(proceso);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Proceso> filtrarProcesos(Long empresaId, String estadoStr, String categoria) {
+    public List<ProcesoRegistroDTO> filtrarProcesos(Long empresaId, String estadoStr, String categoria) {
         EstadoProceso estado = null;
         if (estadoStr != null && !estadoStr.isBlank()) {
             try {
@@ -118,7 +128,10 @@ public class ProcesoService implements IProcesoService {
             }
         }
         String categoriaQuery = (categoria != null && !categoria.isBlank()) ? categoria : null;
-        return procesoRepository.buscarConFiltros(empresaId, estado, categoriaQuery);
+        return procesoRepository.buscarConFiltros(empresaId, estado, categoriaQuery)
+                .stream()
+                .map(this::toRegistroDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -130,8 +143,7 @@ public class ProcesoService implements IProcesoService {
         proceso.setDefinicionJson(definicionJson);
         Proceso actualizado = procesoRepository.save(proceso);
 
-        ProcesoEdicionDTO response = modelMapper.map(actualizado, ProcesoEdicionDTO.class);
-        return response;
+        return modelMapper.map(actualizado, ProcesoEdicionDTO.class);
     }
 
     @Override
@@ -148,10 +160,8 @@ public class ProcesoService implements IProcesoService {
         boolean esAutor = proceso.getAutor().getId().equals(usuario.getId());
         boolean esAdmin = "ADMINISTRADOR_EMPRESA".equals(usuario.getRol());
 
-        if (!esAutor && !esAdmin) {
-            throw new BusinessRuleException(
-                    "No tienes permisos para editar este proceso. Solo el autor o un administrador pueden hacerlo.");
-        }
+        if (!esAutor && !esAdmin)
+            throw new BusinessRuleException("No tienes permisos para editar este proceso.");
 
         StringBuilder cambios = new StringBuilder();
         if (!proceso.getNombre().equals(dto.getNombre())) {
@@ -169,11 +179,10 @@ public class ProcesoService implements IProcesoService {
 
         if (cambios.length() > 0) {
             proceso = procesoRepository.save(proceso);
-            HistorialProceso historial = HistorialProceso.builder()
+            historialProcesoRepository.save(HistorialProceso.builder()
                     .proceso(proceso).usuario(usuario)
                     .accion("EDICION").detalle(cambios.toString().trim())
-                    .build();
-            historialProcesoRepository.save(historial);
+                    .build());
         }
 
         ProcesoEdicionDTO response = modelMapper.map(proceso, ProcesoEdicionDTO.class);
@@ -192,18 +201,16 @@ public class ProcesoService implements IProcesoService {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol())) {
+        if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol()))
             throw new BusinessRuleException("Solo un administrador puede eliminar procesos.");
-        }
 
         proceso.setEstado(EstadoProceso.INACTIVO);
         proceso = procesoRepository.save(proceso);
 
-        HistorialProceso historial = HistorialProceso.builder()
+        historialProcesoRepository.save(HistorialProceso.builder()
                 .proceso(proceso).usuario(usuario)
                 .accion("ELIMINACION").detalle("El proceso fue eliminado (estado cambiado a INACTIVO).")
-                .build();
-        historialProcesoRepository.save(historial);
+                .build());
     }
 
     @Override
@@ -212,18 +219,14 @@ public class ProcesoService implements IProcesoService {
         Proceso proceso = procesoRepository.findById(procesoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado"));
 
-        if (nuevoEstado == EstadoProceso.PUBLICADO) {
-            validarPermisoDeRol(usuarioId, proceso.getPool().getId(), "PUBLICAR");
-        } else {
-            validarPermisoDeRol(usuarioId, proceso.getPool().getId(), "EDITAR");
-        }
+        validarPermisoDeRol(usuarioId, proceso.getPool().getId(),
+                nuevoEstado == EstadoProceso.PUBLICADO ? "PUBLICAR" : "EDITAR");
 
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        if (nuevoEstado == EstadoProceso.PUBLICADO && !"ADMINISTRADOR_EMPRESA".equals(usuario.getRol())) {
+        if (nuevoEstado == EstadoProceso.PUBLICADO && !"ADMINISTRADOR_EMPRESA".equals(usuario.getRol()))
             throw new BusinessRuleException("Solo un administrador puede publicar procesos.");
-        }
 
         proceso.setEstado(nuevoEstado);
         Proceso actualizado = procesoRepository.save(proceso);
@@ -242,27 +245,22 @@ public class ProcesoService implements IProcesoService {
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol()) || !usuario.getEmpresa().getId().equals(proceso.getEmpresa().getId())) {
+        if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol()) || !usuario.getEmpresa().getId().equals(proceso.getEmpresa().getId()))
             throw new BusinessRuleException("Solo un administrador global de la empresa dueña puede compartir el proceso");
-        }
 
         Pool poolDestino = poolRepository.findById(dto.getPoolDestinoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Pool destino no encontrado"));
 
-        if (procesoCompartidoRepository.findByProcesoIdAndPoolDestinoId(procesoId, poolDestino.getId()).isPresent()) {
+        if (procesoCompartidoRepository.findByProcesoIdAndPoolDestinoId(procesoId, poolDestino.getId()).isPresent())
             throw new BusinessRuleException("El proceso ya está compartido con este Pool");
-        }
 
-        ProcesoCompartido comparticion = ProcesoCompartido.builder()
-                .proceso(proceso).poolDestino(poolDestino).permiso(dto.getPermiso())
-                .build();
-        procesoCompartidoRepository.save(comparticion);
+        procesoCompartidoRepository.save(ProcesoCompartido.builder()
+                .proceso(proceso).poolDestino(poolDestino).permiso(dto.getPermiso()).build());
 
-        HistorialProceso historial = HistorialProceso.builder()
+        historialProcesoRepository.save(HistorialProceso.builder()
                 .proceso(proceso).usuario(usuario).accion("COMPARTIR")
                 .detalle("Proceso compartido con el Pool ID: " + poolDestino.getId() + " con permiso " + dto.getPermiso().name())
-                .build();
-        historialProcesoRepository.save(historial);
+                .build());
     }
 
     @Override
@@ -274,36 +272,33 @@ public class ProcesoService implements IProcesoService {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol()) || !usuario.getEmpresa().getId().equals(proceso.getEmpresa().getId())) {
+        if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol()) || !usuario.getEmpresa().getId().equals(proceso.getEmpresa().getId()))
             throw new BusinessRuleException("Solo un administrador de la empresa dueña puede quitar la compartición");
-        }
 
         procesoCompartidoRepository.deleteByProcesoIdAndPoolDestinoId(procesoId, poolDestinoId);
 
-        HistorialProceso historial = HistorialProceso.builder()
+        historialProcesoRepository.save(HistorialProceso.builder()
                 .proceso(proceso).usuario(usuario).accion("QUITAR_COMPARTICION")
                 .detalle("Se revocó el acceso al proceso para el Pool ID: " + poolDestinoId)
-                .build();
-        historialProcesoRepository.save(historial);
+                .build());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Proceso> listarProcesosCompartidosConPool(Long poolId, Long usuarioId) {
+    public List<ProcesoRegistroDTO> listarProcesosCompartidosConPool(Long poolId, Long usuarioId) {
         Pool pool = poolRepository.findById(poolId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pool no encontrado"));
 
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        if (!usuario.getEmpresa().getId().equals(pool.getEmpresa().getId())) {
+        if (!usuario.getEmpresa().getId().equals(pool.getEmpresa().getId()))
             throw new BusinessRuleException("No perteneces a la empresa de este pool");
-        }
 
         return procesoCompartidoRepository.findByPoolDestinoId(poolId)
                 .stream()
-                .map(ProcesoCompartido::getProceso)
-                .toList();
+                .map(c -> toRegistroDTO(c.getProceso()))
+                .collect(Collectors.toList());
     }
 
     private void validarPermisoDeRol(Long usuarioId, Long poolId, String accion) {
@@ -316,7 +311,6 @@ public class ProcesoService implements IProcesoService {
                 .orElseThrow(() -> new BusinessRuleException("No cuentas con ningún rol asignado en este pool/departamento."));
 
         RolPool rol = asignacion.getRol();
-
         switch (accion) {
             case "CREAR"    -> { if (!rol.isPermisoCrearProceso())    throw new BusinessRuleException("Tu rol en este pool no permite CREAR procesos"); }
             case "EDITAR"   -> { if (!rol.isPermisoEditarProceso())   throw new BusinessRuleException("Tu rol en este pool no permite EDITAR procesos"); }
