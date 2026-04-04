@@ -1,11 +1,13 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.service.interfaces.IDocumentoService;
 import com.edu.javeriana.backend.dto.DocumentoDTO;
 import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.model.Documento;
 import com.edu.javeriana.backend.model.Proceso;
 import com.edu.javeriana.backend.repository.DocumentoRepository;
-import com.edu.javeriana.backend.repository.ProcesoRepository;
+import com.edu.javeriana.backend.service.interfaces.IProcesoService;
+import org.springframework.context.annotation.Lazy;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,25 +26,24 @@ import java.util.stream.Collectors;
 public class DocumentoService implements IDocumentoService {
 
     private final DocumentoRepository documentoRepository;
-    private final ProcesoRepository procesoRepository;
+    private final IProcesoService procesoService;
     private final ModelMapper modelMapper;
 
     // Directorio donde se guardarán los archivos localmente (simulado local file system)
     private final String UPLOAD_DIR = "uploads/";
 
     public DocumentoService(DocumentoRepository documentoRepository,
-                            ProcesoRepository procesoRepository,
+                            @Lazy IProcesoService procesoService,
                             ModelMapper modelMapper) {
         this.documentoRepository = documentoRepository;
-        this.procesoRepository   = procesoRepository;
+        this.procesoService      = procesoService;
         this.modelMapper         = modelMapper;
     }
 
     @Override
     @Transactional
     public DocumentoDTO subirDocumento(Long procesoId, MultipartFile archivo) {
-        Proceso proceso = procesoRepository.findById(procesoId)
-                .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado"));
+        Proceso proceso = procesoService.obtenerProcesoEntity(procesoId);
 
         if (archivo.isEmpty()) {
             throw new IllegalArgumentException("El archivo está vacío");
@@ -84,7 +85,7 @@ public class DocumentoService implements IDocumentoService {
     @Override
     @Transactional(readOnly = true)
     public List<DocumentoDTO> listarDocumentosPorProceso(Long procesoId) {
-        if (!procesoRepository.existsById(procesoId)) {
+        if (!procesoService.existeProceso(procesoId)) {
             throw new ResourceNotFoundException("Proceso no encontrado");
         }
         return documentoRepository.findByProcesoId(procesoId)

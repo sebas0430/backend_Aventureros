@@ -1,4 +1,4 @@
-package com.edu.javeriana.backend.service;
+package com.edu.javeriana.backend.service.interfaces;
 
 import com.edu.javeriana.backend.dto.ProcesoCompartirDTO;
 import com.edu.javeriana.backend.dto.ProcesoEdicionDTO;
@@ -32,4 +32,8 @@ public interface IProcesoService {
     void quitarComparticionProceso(Long procesoId, Long poolDestinoId, Long usuarioId);
 
     List<ProcesoRegistroDTO> listarProcesosCompartidosConPool(Long poolId, Long usuarioId);
+
+    com.edu.javeriana.backend.model.Proceso obtenerProcesoEntity(Long id);
+
+    boolean existeProceso(Long id);
 }

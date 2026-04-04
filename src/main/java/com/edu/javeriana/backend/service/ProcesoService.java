@@ -1,5 +1,7 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.service.interfaces.IProcesoService;
+import com.edu.javeriana.backend.service.interfaces.IHistorialProcesoService;
 import com.edu.javeriana.backend.dto.ProcesoCompartirDTO;
 import com.edu.javeriana.backend.dto.ProcesoEdicionDTO;
 import com.edu.javeriana.backend.dto.ProcesoRegistroDTO;
@@ -8,6 +10,7 @@ import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.model.*;
 import com.edu.javeriana.backend.repository.*;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +28,7 @@ public class ProcesoService implements IProcesoService {
     private final PoolRepository poolRepository;
     private final ProcesoCompartidoRepository procesoCompartidoRepository;
     private final AsignacionRolPoolRepository asignacionRolPoolRepository;
-    private final HistorialProcesoRepository historialProcesoRepository;
+    private final IHistorialProcesoService historialProcesoService;
     private final ModelMapper modelMapper;
 
     public ProcesoService(ProcesoRepository procesoRepository,
@@ -34,7 +37,7 @@ public class ProcesoService implements IProcesoService {
                           PoolRepository poolRepository,
                           ProcesoCompartidoRepository procesoCompartidoRepository,
                           AsignacionRolPoolRepository asignacionRolPoolRepository,
-                          HistorialProcesoRepository historialProcesoRepository,
+                          @Lazy IHistorialProcesoService historialProcesoService,
                           ModelMapper modelMapper) {
         this.procesoRepository           = procesoRepository;
         this.empresaRepository           = empresaRepository;
@@ -42,7 +45,7 @@ public class ProcesoService implements IProcesoService {
         this.poolRepository              = poolRepository;
         this.procesoCompartidoRepository = procesoCompartidoRepository;
         this.asignacionRolPoolRepository = asignacionRolPoolRepository;
-        this.historialProcesoRepository  = historialProcesoRepository;
+        this.historialProcesoService     = historialProcesoService;
         this.modelMapper                 = modelMapper;
     }
 
@@ -179,10 +182,7 @@ public class ProcesoService implements IProcesoService {
 
         if (cambios.length() > 0) {
             proceso = procesoRepository.save(proceso);
-            historialProcesoRepository.save(HistorialProceso.builder()
-                    .proceso(proceso).usuario(usuario)
-                    .accion("EDICION").detalle(cambios.toString().trim())
-                    .build());
+            historialProcesoService.registrarAccion(proceso, usuario, "EDICION", cambios.toString().trim());
         }
 
         ProcesoEdicionDTO response = modelMapper.map(proceso, ProcesoEdicionDTO.class);
@@ -207,10 +207,7 @@ public class ProcesoService implements IProcesoService {
         proceso.setEstado(EstadoProceso.INACTIVO);
         proceso = procesoRepository.save(proceso);
 
-        historialProcesoRepository.save(HistorialProceso.builder()
-                .proceso(proceso).usuario(usuario)
-                .accion("ELIMINACION").detalle("El proceso fue eliminado (estado cambiado a INACTIVO).")
-                .build());
+        historialProcesoService.registrarAccion(proceso, usuario, "ELIMINACION", "El proceso fue eliminado (estado cambiado a INACTIVO).");
     }
 
     @Override
@@ -257,10 +254,7 @@ public class ProcesoService implements IProcesoService {
         procesoCompartidoRepository.save(ProcesoCompartido.builder()
                 .proceso(proceso).poolDestino(poolDestino).permiso(dto.getPermiso()).build());
 
-        historialProcesoRepository.save(HistorialProceso.builder()
-                .proceso(proceso).usuario(usuario).accion("COMPARTIR")
-                .detalle("Proceso compartido con el Pool ID: " + poolDestino.getId() + " con permiso " + dto.getPermiso().name())
-                .build());
+        historialProcesoService.registrarAccion(proceso, usuario, "COMPARTIR", "Proceso compartido con el Pool ID: " + poolDestino.getId() + " con permiso " + dto.getPermiso().name());
     }
 
     @Override
@@ -277,10 +271,7 @@ public class ProcesoService implements IProcesoService {
 
         procesoCompartidoRepository.deleteByProcesoIdAndPoolDestinoId(procesoId, poolDestinoId);
 
-        historialProcesoRepository.save(HistorialProceso.builder()
-                .proceso(proceso).usuario(usuario).accion("QUITAR_COMPARTICION")
-                .detalle("Se revocó el acceso al proceso para el Pool ID: " + poolDestinoId)
-                .build());
+        historialProcesoService.registrarAccion(proceso, usuario, "QUITAR_COMPARTICION", "Se revocó el acceso al proceso para el Pool ID: " + poolDestinoId);
     }
 
     @Override
@@ -317,5 +308,18 @@ public class ProcesoService implements IProcesoService {
             case "ELIMINAR" -> { if (!rol.isPermisoEliminarProceso()) throw new BusinessRuleException("Tu rol en este pool no permite ELIMINAR procesos"); }
             case "PUBLICAR" -> { if (!rol.isPermisoPublicarProceso()) throw new BusinessRuleException("Tu rol en este pool no permite PUBLICAR procesos"); }
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Proceso obtenerProcesoEntity(Long id) {
+        return procesoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado"));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existeProceso(Long id) {
+        return procesoRepository.existsById(id);
     }
 }

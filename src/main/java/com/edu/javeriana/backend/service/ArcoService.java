@@ -1,5 +1,6 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.service.interfaces.IArcoService;
 import com.edu.javeriana.backend.dto.ArcoEdicionDTO;
 import com.edu.javeriana.backend.dto.ArcoRegistroDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
@@ -9,9 +10,10 @@ import com.edu.javeriana.backend.model.Proceso;
 import com.edu.javeriana.backend.model.TipoNodo;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.ArcoRepository;
-import com.edu.javeriana.backend.repository.ProcesoRepository;
-import com.edu.javeriana.backend.repository.UsuarioRepository;
+import com.edu.javeriana.backend.service.interfaces.IProcesoService;
+import com.edu.javeriana.backend.service.interfaces.IUsuarioService;
 import org.modelmapper.ModelMapper;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,17 +24,17 @@ import java.util.stream.Collectors;
 public class ArcoService implements IArcoService {
 
     private final ArcoRepository arcoRepository;
-    private final ProcesoRepository procesoRepository;
-    private final UsuarioRepository usuarioRepository;
+    private final IProcesoService procesoService;
+    private final IUsuarioService usuarioService;
     private final ModelMapper modelMapper;
 
     public ArcoService(ArcoRepository arcoRepository,
-                       ProcesoRepository procesoRepository,
-                       UsuarioRepository usuarioRepository,
+                       @Lazy IProcesoService procesoService,
+                       @Lazy IUsuarioService usuarioService,
                        ModelMapper modelMapper) {
         this.arcoRepository   = arcoRepository;
-        this.procesoRepository = procesoRepository;
-        this.usuarioRepository = usuarioRepository;
+        this.procesoService   = procesoService;
+        this.usuarioService   = usuarioService;
         this.modelMapper       = modelMapper;
     }
 
@@ -40,8 +42,7 @@ public class ArcoService implements IArcoService {
     @Transactional
     public ArcoRegistroDTO crearArco(ArcoRegistroDTO dto) {
 
-        Proceso proceso = procesoRepository.findById(dto.getProcesoId())
-                .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado"));
+        Proceso proceso = procesoService.obtenerProcesoEntity(dto.getProcesoId());
 
         validarUsuarioAutorizado(proceso, dto.getUsuarioId());
 
@@ -124,7 +125,7 @@ public class ArcoService implements IArcoService {
     @Override
     @Transactional(readOnly = true)
     public List<ArcoRegistroDTO> listarArcosPorProceso(Long procesoId) {
-        if (!procesoRepository.existsById(procesoId)) {
+        if (!procesoService.existeProceso(procesoId)) {
             throw new ResourceNotFoundException("Proceso no encontrado");
         }
         return arcoRepository.findByProcesoId(procesoId)
@@ -165,25 +166,33 @@ public class ArcoService implements IArcoService {
     @Transactional
     public void eliminarArcosPorProceso(Long procesoId, Long usuarioId) {
         validarUsuarioAdministrador(usuarioId);
-        if (!procesoRepository.existsById(procesoId)) {
+        if (!procesoService.existeProceso(procesoId)) {
             throw new ResourceNotFoundException("Proceso no encontrado");
         }
         arcoRepository.deleteByProcesoId(procesoId);
     }
 
+    @Override
+    @Transactional
+    public void eliminarArcosPorNodo(Long procesoId, Long nodoId, TipoNodo tipoNodo) {
+        List<Arco> arcosOrigen  = arcoRepository.findByProcesoIdAndOrigenIdAndOrigenTipo(procesoId, nodoId, tipoNodo);
+        List<Arco> arcosDestino = arcoRepository.findByProcesoIdAndDestinoIdAndDestinoTipo(procesoId, nodoId, tipoNodo);
+        
+        arcoRepository.deleteAll(arcosOrigen);
+        arcoRepository.deleteAll(arcosDestino);
+    }
+
     // ─── Helpers ────────────────────────────────────────────────────────────────
 
     private void validarUsuarioAdministrador(Long usuarioId) {
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Usuario usuario = usuarioService.obtenerUsuarioEntity(usuarioId);
         if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol())) {
             throw new BusinessRuleException("Solo un administrador puede eliminar arcos");
         }
     }
 
     private void validarUsuarioAutorizado(Proceso proceso, Long usuarioId) {
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Usuario usuario = usuarioService.obtenerUsuarioEntity(usuarioId);
         boolean esAutor = proceso.getAutor().getId().equals(usuario.getId());
         boolean esAdmin = "ADMINISTRADOR_EMPRESA".equals(usuario.getRol());
         if (!esAutor && !esAdmin) {

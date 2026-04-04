@@ -2,7 +2,7 @@ package com.edu.javeriana.backend.controller;
 
 import com.edu.javeriana.backend.dto.EmpresaEdicionDTO;
 import com.edu.javeriana.backend.dto.EmpresaRegistroDTO;
-import com.edu.javeriana.backend.service.IEmpresaService;
+import com.edu.javeriana.backend.service.interfaces.IEmpresaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 

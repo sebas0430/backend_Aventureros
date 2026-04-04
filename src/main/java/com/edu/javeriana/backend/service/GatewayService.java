@@ -1,15 +1,17 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.service.interfaces.IGatewayService;
 import com.edu.javeriana.backend.dto.GatewayEdicionDTO;
 import com.edu.javeriana.backend.dto.GatewayRegistroDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
 import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.model.*;
-import com.edu.javeriana.backend.repository.ArcoRepository;
 import com.edu.javeriana.backend.repository.GatewayRepository;
-import com.edu.javeriana.backend.repository.ProcesoRepository;
-import com.edu.javeriana.backend.repository.UsuarioRepository;
+import com.edu.javeriana.backend.service.interfaces.IArcoService;
+import com.edu.javeriana.backend.service.interfaces.IProcesoService;
+import com.edu.javeriana.backend.service.interfaces.IUsuarioService;
 import org.modelmapper.ModelMapper;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -24,20 +26,20 @@ import java.util.stream.Collectors;
 public class GatewayService implements IGatewayService {
 
     private final GatewayRepository gatewayRepository;
-    private final ProcesoRepository procesoRepository;
-    private final UsuarioRepository usuarioRepository;
-    private final ArcoRepository arcoRepository;
+    private final IProcesoService procesoService;
+    private final IUsuarioService usuarioService;
+    private final IArcoService arcoService;
     private final ModelMapper modelMapper;
 
     public GatewayService(GatewayRepository gatewayRepository,
-                          ProcesoRepository procesoRepository,
-                          UsuarioRepository usuarioRepository,
-                          ArcoRepository arcoRepository,
+                          @Lazy IProcesoService procesoService,
+                          @Lazy IUsuarioService usuarioService,
+                          @Lazy IArcoService arcoService,
                           ModelMapper modelMapper) {
         this.gatewayRepository = gatewayRepository;
-        this.procesoRepository = procesoRepository;
-        this.usuarioRepository = usuarioRepository;
-        this.arcoRepository    = arcoRepository;
+        this.procesoService    = procesoService;
+        this.usuarioService    = usuarioService;
+        this.arcoService       = arcoService;
         this.modelMapper       = modelMapper;
     }
 
@@ -45,8 +47,7 @@ public class GatewayService implements IGatewayService {
     @Transactional
     public GatewayRegistroDTO crearGateway(GatewayRegistroDTO dto) {
 
-        Proceso proceso = procesoRepository.findById(dto.getProcesoId())
-                .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado"));
+        Proceso proceso = procesoService.obtenerProcesoEntity(dto.getProcesoId());
 
         validarUsuarioAutorizado(proceso, dto.getUsuarioId());
 
@@ -91,7 +92,7 @@ public class GatewayService implements IGatewayService {
     @Override
     @Transactional(readOnly = true)
     public List<GatewayRegistroDTO> listarGatewaysPorProceso(Long procesoId) {
-        if (!procesoRepository.existsById(procesoId)) {
+        if (!procesoService.existeProceso(procesoId)) {
             throw new ResourceNotFoundException("Proceso no encontrado");
         }
         return gatewayRepository.findByProcesoId(procesoId)
@@ -114,11 +115,7 @@ public class GatewayService implements IGatewayService {
                 .orElseThrow(() -> new ResourceNotFoundException("Gateway no encontrado"));
 
         Long procesoId = gateway.getProceso().getId();
-        List<Arco> arcosOrigen  = arcoRepository.findByProcesoIdAndOrigenIdAndOrigenTipo(procesoId, id, TipoNodo.GATEWAY);
-        List<Arco> arcosDestino = arcoRepository.findByProcesoIdAndDestinoIdAndDestinoTipo(procesoId, id, TipoNodo.GATEWAY);
-
-        arcoRepository.deleteAll(arcosOrigen);
-        arcoRepository.deleteAll(arcosDestino);
+        arcoService.eliminarArcosPorNodo(procesoId, id, TipoNodo.GATEWAY);
 
         gatewayRepository.delete(gateway);
     }
@@ -128,7 +125,7 @@ public class GatewayService implements IGatewayService {
     public void eliminarGatewaysPorProceso(Long procesoId, Long usuarioId) {
         validarUsuarioAdministrador(usuarioId);
 
-        if (!procesoRepository.existsById(procesoId)) {
+        if (!procesoService.existeProceso(procesoId)) {
             throw new ResourceNotFoundException("Proceso no encontrado");
         }
         gatewayRepository.deleteByProcesoId(procesoId);
@@ -137,16 +134,14 @@ public class GatewayService implements IGatewayService {
     // ─── Helpers ────────────────────────────────────────────────────────────────
 
     private void validarUsuarioAdministrador(Long usuarioId) {
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Usuario usuario = usuarioService.obtenerUsuarioEntity(usuarioId);
         if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol())) {
             throw new BusinessRuleException("Solo un administrador puede eliminar gateways");
         }
     }
 
     private void validarUsuarioAutorizado(Proceso proceso, Long usuarioId) {
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Usuario usuario = usuarioService.obtenerUsuarioEntity(usuarioId);
         boolean esAutor = proceso.getAutor().getId().equals(usuario.getId());
         boolean esAdmin = "ADMINISTRADOR_EMPRESA".equals(usuario.getRol());
         if (!esAutor && !esAdmin) {

@@ -3,7 +3,7 @@ package com.edu.javeriana.backend.controller;
 import com.edu.javeriana.backend.dto.RolProcesoDetalleDTO;
 import com.edu.javeriana.backend.dto.RolProcesoEdicionDTO;
 import com.edu.javeriana.backend.dto.RolProcesoRegistroDTO;
-import com.edu.javeriana.backend.service.IRolProcesoService;
+import com.edu.javeriana.backend.service.interfaces.IRolProcesoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

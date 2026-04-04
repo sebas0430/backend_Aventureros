@@ -1,4 +1,4 @@
-package com.edu.javeriana.backend.service;
+package com.edu.javeriana.backend.service.interfaces;
 
 import com.edu.javeriana.backend.dto.ArcoEdicionDTO;
 import com.edu.javeriana.backend.dto.ArcoRegistroDTO;
@@ -18,4 +18,6 @@ public interface IArcoService {
     void eliminarArco(Long id, Long usuarioId);
 
     void eliminarArcosPorProceso(Long procesoId, Long usuarioId);
+
+    void eliminarArcosPorNodo(Long procesoId, Long nodoId, com.edu.javeriana.backend.model.TipoNodo tipoNodo);
 }

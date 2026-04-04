@@ -1,4 +1,4 @@
-package com.edu.javeriana.backend.service;
+package com.edu.javeriana.backend.service.interfaces;
 
 import java.util.List;
 
@@ -12,6 +12,10 @@ public interface IEmpresaService {
     EmpresaEdicionDTO editarEmpresa(Long id, EmpresaEdicionDTO dto);
 
     EmpresaRegistroDTO obtenerEmpresa(Long id);
+
+    com.edu.javeriana.backend.model.Empresa obtenerEmpresaEntity(Long id);
+
+    boolean existeEmpresa(Long id);
 
     List<EmpresaRegistroDTO> listarEmpresas();
 

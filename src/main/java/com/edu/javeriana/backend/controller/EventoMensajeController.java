@@ -3,7 +3,7 @@ package com.edu.javeriana.backend.controller;
 import com.edu.javeriana.backend.dto.EventoMensajeRegistroDTO;
 import com.edu.javeriana.backend.dto.MensajeEjecucionDTO;
 import com.edu.javeriana.backend.dto.MensajeLanzarDTO;
-import com.edu.javeriana.backend.service.IEventoMensajeService;
+import com.edu.javeriana.backend.service.interfaces.IEventoMensajeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

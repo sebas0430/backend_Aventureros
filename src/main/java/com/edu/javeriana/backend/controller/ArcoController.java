@@ -2,7 +2,7 @@ package com.edu.javeriana.backend.controller;
 
 import com.edu.javeriana.backend.dto.ArcoEdicionDTO;
 import com.edu.javeriana.backend.dto.ArcoRegistroDTO;
-import com.edu.javeriana.backend.service.IArcoService;
+import com.edu.javeriana.backend.service.interfaces.IArcoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

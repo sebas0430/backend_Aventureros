@@ -2,7 +2,7 @@ package com.edu.javeriana.backend.controller;
 
 import com.edu.javeriana.backend.dto.ActividadEdicionDTO;
 import com.edu.javeriana.backend.dto.ActividadRegistroDTO;
-import com.edu.javeriana.backend.service.IActividadService;
+import com.edu.javeriana.backend.service.interfaces.IActividadService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

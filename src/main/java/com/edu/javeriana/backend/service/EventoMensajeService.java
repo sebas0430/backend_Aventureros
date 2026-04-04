@@ -1,5 +1,6 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.service.interfaces.IEventoMensajeService;
 import com.edu.javeriana.backend.dto.EventoMensajeRegistroDTO;
 import com.edu.javeriana.backend.dto.MensajeEjecucionDTO;
 import com.edu.javeriana.backend.dto.MensajeLanzarDTO;
@@ -8,8 +9,9 @@ import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.model.*;
 import com.edu.javeriana.backend.repository.EventoMensajeRepository;
 import com.edu.javeriana.backend.repository.MensajeEjecucionRepository;
-import com.edu.javeriana.backend.repository.ProcesoRepository;
-import com.edu.javeriana.backend.repository.UsuarioRepository;
+import com.edu.javeriana.backend.service.interfaces.IProcesoService;
+import com.edu.javeriana.backend.service.interfaces.IUsuarioService;
+import org.springframework.context.annotation.Lazy;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -25,30 +27,28 @@ public class EventoMensajeService implements IEventoMensajeService {
 
     private final EventoMensajeRepository eventoMensajeRepository;
     private final MensajeEjecucionRepository mensajeEjecucionRepository;
-    private final ProcesoRepository procesoRepository;
-    private final UsuarioRepository usuarioRepository;
+    private final IProcesoService procesoService;
+    private final IUsuarioService usuarioService;
     private final ModelMapper modelMapper;
 
     public EventoMensajeService(EventoMensajeRepository eventoMensajeRepository,
                                 MensajeEjecucionRepository mensajeEjecucionRepository,
-                                ProcesoRepository procesoRepository,
-                                UsuarioRepository usuarioRepository,
+                                @Lazy IProcesoService procesoService,
+                                @Lazy IUsuarioService usuarioService,
                                 ModelMapper modelMapper) {
         this.eventoMensajeRepository   = eventoMensajeRepository;
         this.mensajeEjecucionRepository = mensajeEjecucionRepository;
-        this.procesoRepository          = procesoRepository;
-        this.usuarioRepository          = usuarioRepository;
+        this.procesoService             = procesoService;
+        this.usuarioService             = usuarioService;
         this.modelMapper                = modelMapper;
     }
 
     @Override
     @Transactional
     public EventoMensajeRegistroDTO crearEvento(EventoMensajeRegistroDTO dto) {
-        Proceso proceso = procesoRepository.findById(dto.getProcesoId())
-                .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado"));
+        Proceso proceso = procesoService.obtenerProcesoEntity(dto.getProcesoId());
 
-        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Usuario usuario = usuarioService.obtenerUsuarioEntity(dto.getUsuarioId());
 
         if (!usuario.getEmpresa().getId().equals(proceso.getEmpresa().getId())) {
             throw new BusinessRuleException("No perteneces a la empresa de este proceso.");
@@ -91,8 +91,7 @@ public class EventoMensajeService implements IEventoMensajeService {
         EventoMensaje evento = eventoMensajeRepository.findById(eventoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Evento no encontrado"));
 
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Usuario usuario = usuarioService.obtenerUsuarioEntity(usuarioId);
 
         if (!usuario.getEmpresa().getId().equals(evento.getProceso().getEmpresa().getId())) {
             throw new BusinessRuleException("No perteneces a la empresa de este proceso.");
@@ -108,8 +107,7 @@ public class EventoMensajeService implements IEventoMensajeService {
         EventoMensaje origen = eventoMensajeRepository.findById(dto.getEventoOrigenId())
                 .orElseThrow(() -> new ResourceNotFoundException("Evento de origen no encontrado"));
 
-        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario de ejecución no encontrado"));
+        Usuario usuario = usuarioService.obtenerUsuarioEntity(dto.getUsuarioId());
 
         if (origen.getTipo() != TipoEventoMensaje.THROW) {
             throw new BusinessRuleException("El evento de origen debe ser de tipo THROW para poder lanzarlo.");

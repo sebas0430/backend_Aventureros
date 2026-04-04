@@ -4,7 +4,7 @@ import com.edu.javeriana.backend.dto.PoolEdicionDTO;
 import com.edu.javeriana.backend.dto.PoolRegistroDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
 import com.edu.javeriana.backend.exception.ResourceNotFoundException;
-import com.edu.javeriana.backend.service.IPoolService;
+import com.edu.javeriana.backend.service.interfaces.IPoolService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

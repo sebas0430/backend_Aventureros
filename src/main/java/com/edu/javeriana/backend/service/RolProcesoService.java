@@ -1,5 +1,6 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.service.interfaces.IRolProcesoService;
 import com.edu.javeriana.backend.dto.RolProcesoDetalleDTO;
 import com.edu.javeriana.backend.dto.RolProcesoEdicionDTO;
 import com.edu.javeriana.backend.dto.RolProcesoRegistroDTO;
@@ -9,12 +10,13 @@ import com.edu.javeriana.backend.model.Actividad;
 import com.edu.javeriana.backend.model.Empresa;
 import com.edu.javeriana.backend.model.RolProceso;
 import com.edu.javeriana.backend.model.Usuario;
-import com.edu.javeriana.backend.repository.ActividadRepository;
-import com.edu.javeriana.backend.repository.EmpresaRepository;
 import com.edu.javeriana.backend.repository.RolProcesoRepository;
-import com.edu.javeriana.backend.repository.UsuarioRepository;
+import com.edu.javeriana.backend.service.interfaces.IActividadService;
+import com.edu.javeriana.backend.service.interfaces.IEmpresaService;
+import com.edu.javeriana.backend.service.interfaces.IUsuarioService;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,31 +31,29 @@ import java.util.stream.Collectors;
 public class RolProcesoService implements IRolProcesoService {
 
     private final RolProcesoRepository rolProcesoRepository;
-    private final EmpresaRepository empresaRepository;
-    private final UsuarioRepository usuarioRepository;
-    private final ActividadRepository actividadRepository;
+    private final IEmpresaService empresaService;
+    private final IUsuarioService usuarioService;
+    private final IActividadService actividadService;
     private final ModelMapper modelMapper;
 
     public RolProcesoService(RolProcesoRepository rolProcesoRepository,
-                             EmpresaRepository empresaRepository,
-                             UsuarioRepository usuarioRepository,
-                             ActividadRepository actividadRepository,
+                             @Lazy IEmpresaService empresaService,
+                             @Lazy IUsuarioService usuarioService,
+                             @Lazy IActividadService actividadService,
                              ModelMapper modelMapper) {
         this.rolProcesoRepository = rolProcesoRepository;
-        this.empresaRepository    = empresaRepository;
-        this.usuarioRepository    = usuarioRepository;
-        this.actividadRepository  = actividadRepository;
+        this.empresaService       = empresaService;
+        this.usuarioService       = usuarioService;
+        this.actividadService     = actividadService;
         this.modelMapper          = modelMapper;
     }
 
     @Override
     @Transactional
     public RolProcesoRegistroDTO crearRolProceso(RolProcesoRegistroDTO dto) {
-        Empresa empresa = empresaRepository.findById(dto.getEmpresaId())
-                .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada"));
+        Empresa empresa = empresaService.obtenerEmpresaEntity(dto.getEmpresaId());
 
-        Usuario solicitante = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Usuario solicitante = usuarioService.obtenerUsuarioEntity(dto.getUsuarioId());
 
         if (!solicitante.getEmpresa().getId().equals(empresa.getId())) {
             throw new BusinessRuleException("No perteneces a esta empresa");
@@ -91,8 +91,7 @@ public class RolProcesoService implements IRolProcesoService {
         RolProceso rol = rolProcesoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Rol de proceso no encontrado"));
 
-        Usuario solicitante = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Usuario solicitante = usuarioService.obtenerUsuarioEntity(dto.getUsuarioId());
 
         if (!solicitante.getEmpresa().getId().equals(rol.getEmpresa().getId())) {
             throw new BusinessRuleException("No perteneces a la empresa de este rol");
@@ -135,11 +134,9 @@ public class RolProcesoService implements IRolProcesoService {
     @Override
     @Transactional(readOnly = true)
     public List<RolProcesoRegistroDTO> listarRolesPorEmpresa(Long empresaId, Long usuarioId) {
-        Empresa empresa = empresaRepository.findById(empresaId)
-                .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada"));
+        Empresa empresa = empresaService.obtenerEmpresaEntity(empresaId);
 
-        Usuario solicitante = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Usuario solicitante = usuarioService.obtenerUsuarioEntity(usuarioId);
 
         if (!solicitante.getEmpresa().getId().equals(empresa.getId())) {
             throw new BusinessRuleException("No perteneces a esta empresa");
@@ -161,8 +158,7 @@ public class RolProcesoService implements IRolProcesoService {
         RolProceso rol = rolProcesoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Rol de proceso no encontrado"));
 
-        Usuario solicitante = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Usuario solicitante = usuarioService.obtenerUsuarioEntity(usuarioId);
 
         if (!solicitante.getEmpresa().getId().equals(rol.getEmpresa().getId())) {
             throw new BusinessRuleException("No perteneces a la empresa de este rol");
@@ -173,7 +169,7 @@ public class RolProcesoService implements IRolProcesoService {
                     "Solo un administrador de la empresa puede eliminar roles de proceso");
         }
 
-        if (actividadRepository.existsByRolProcesoId(rol.getId())) {
+        if (actividadService.existePorRolProceso(rol.getId())) {
             throw new BusinessRuleException(
                     "No se puede eliminar el rol '" + rol.getNombre()
                     + "' porque está asignado a una o más actividades. Reasigne las actividades primero.");
@@ -198,11 +194,9 @@ public class RolProcesoService implements IRolProcesoService {
     @Override
     @Transactional(readOnly = true)
     public List<RolProcesoDetalleDTO> consultarRolesConDetalle(Long empresaId, Long usuarioId) {
-        Empresa empresa = empresaRepository.findById(empresaId)
-                .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada"));
+        Empresa empresa = empresaService.obtenerEmpresaEntity(empresaId);
 
-        Usuario solicitante = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Usuario solicitante = usuarioService.obtenerUsuarioEntity(usuarioId);
 
         if (!solicitante.getEmpresa().getId().equals(empresa.getId())) {
             throw new BusinessRuleException("No perteneces a esta empresa");
@@ -225,7 +219,7 @@ public class RolProcesoService implements IRolProcesoService {
     // ===================== Helpers =====================
 
     private RolProcesoDetalleDTO construirDetalle(RolProceso rol) {
-        List<Actividad> actividades = actividadRepository.findByRolProcesoId(rol.getId());
+        List<Actividad> actividades = actividadService.obtenerActividadesPorRolProceso(rol.getId());
 
         Map<Long, RolProcesoDetalleDTO.ProcesoUsoDTO> procesoMap = new LinkedHashMap<>();
 

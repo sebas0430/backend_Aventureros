@@ -3,7 +3,7 @@ package com.edu.javeriana.backend.controller;
 import com.edu.javeriana.backend.dto.ConectorExternoRegistroDTO;
 import com.edu.javeriana.backend.dto.EnvioExternoDTO;
 import com.edu.javeriana.backend.dto.NotificacionExternaDTO;
-import com.edu.javeriana.backend.service.INotificacionExternaService;
+import com.edu.javeriana.backend.service.interfaces.INotificacionExternaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

@@ -1,4 +1,4 @@
-package com.edu.javeriana.backend.service;
+package com.edu.javeriana.backend.service.interfaces;
 
 import com.edu.javeriana.backend.dto.PoolEdicionDTO;
 import com.edu.javeriana.backend.dto.PoolRegistroDTO;
@@ -14,4 +14,8 @@ public interface IPoolService {
     void eliminarPool(Long id, Long usuarioId);
  
     List<PoolRegistroDTO> listarPoolsPorEmpresa(Long empresaId);
+
+    com.edu.javeriana.backend.model.Pool guardarPoolEntity(com.edu.javeriana.backend.model.Pool pool);
+
+    com.edu.javeriana.backend.model.Pool obtenerPoolEntity(Long id);
 }

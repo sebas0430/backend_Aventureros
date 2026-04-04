@@ -1,5 +1,8 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.service.interfaces.IUsuarioService;
+import com.edu.javeriana.backend.service.interfaces.IPoolService;
+import com.edu.javeriana.backend.service.interfaces.IEmpresaService;
 import com.edu.javeriana.backend.dto.EmpresaEdicionDTO;
 import com.edu.javeriana.backend.dto.EmpresaRegistroDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
@@ -8,8 +11,7 @@ import com.edu.javeriana.backend.model.Empresa;
 import com.edu.javeriana.backend.model.Pool;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.EmpresaRepository;
-import com.edu.javeriana.backend.repository.PoolRepository;
-import com.edu.javeriana.backend.repository.UsuarioRepository;
+import org.springframework.context.annotation.Lazy;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,17 +27,17 @@ import java.util.stream.Collectors;
 public class EmpresaService implements IEmpresaService {
 
     private final EmpresaRepository empresaRepository;
-    private final UsuarioRepository usuarioRepository;
-    private final PoolRepository poolRepository;
+    private final IUsuarioService usuarioService;
+    private final IPoolService poolService;
     private final ModelMapper modelMapper;
 
     public EmpresaService(EmpresaRepository empresaRepository,
-                          UsuarioRepository usuarioRepository,
-                          PoolRepository poolRepository,
+                          @Lazy IUsuarioService usuarioService,
+                          @Lazy IPoolService poolService,
                           ModelMapper modelMapper) {
         this.empresaRepository = empresaRepository;
-        this.usuarioRepository = usuarioRepository;
-        this.poolRepository    = poolRepository;
+        this.usuarioService    = usuarioService;
+        this.poolService       = poolService;
         this.modelMapper       = modelMapper;
     }
 
@@ -45,7 +47,7 @@ public class EmpresaService implements IEmpresaService {
         if (empresaRepository.findByNit(dto.getNit()).isPresent()) {
             throw new IllegalArgumentException("Ya existe una empresa con ese NIT");
         }
-        if (usuarioRepository.findByUsername(dto.getCorreoContacto()).isPresent()) {
+        if (usuarioService.existeUsuarioPorUsername(dto.getCorreoContacto())) {
             throw new IllegalArgumentException("Ya existe un usuario con este username");
         }
 
@@ -65,7 +67,7 @@ public class EmpresaService implements IEmpresaService {
         admin.setActivo(true);
         admin.setEmpresa(guardada);
 
-        usuarioRepository.save(admin);
+        usuarioService.guardarUsuarioEntity(admin);
 
         // Crear Pool por defecto para la empresa (HU-21)
         Pool poolDefault = Pool.builder()
@@ -73,7 +75,7 @@ public class EmpresaService implements IEmpresaService {
                 .descripcion("Área de procesos principal creada por defecto para la organización.")
                 .empresa(guardada)
                 .build();
-        poolRepository.save(poolDefault);
+        poolService.guardarPoolEntity(poolDefault);
 
         // Mapear entidad → DTO existente
         EmpresaRegistroDTO response = modelMapper.map(guardada, EmpresaRegistroDTO.class);
@@ -111,6 +113,19 @@ public class EmpresaService implements IEmpresaService {
         EmpresaRegistroDTO dto = modelMapper.map(empresa, EmpresaRegistroDTO.class);
         dto.setPasswordAdmin(null); // No exponer el password
         return dto;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Empresa obtenerEmpresaEntity(Long id) {
+        return empresaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada"));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existeEmpresa(Long id) {
+        return empresaRepository.existsById(id);
     }
 
     @Override

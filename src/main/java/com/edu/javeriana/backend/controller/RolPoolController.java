@@ -2,7 +2,7 @@ package com.edu.javeriana.backend.controller;
 
 import com.edu.javeriana.backend.dto.AsignacionRolDTO;
 import com.edu.javeriana.backend.dto.RolPoolRegistroDTO;
-import com.edu.javeriana.backend.service.IRolPoolService;
+import com.edu.javeriana.backend.service.interfaces.IRolPoolService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

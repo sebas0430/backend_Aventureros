@@ -1,5 +1,6 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.service.interfaces.IRolPoolService;
 import com.edu.javeriana.backend.dto.AsignacionRolDTO;
 import com.edu.javeriana.backend.dto.RolPoolRegistroDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
@@ -9,9 +10,11 @@ import com.edu.javeriana.backend.model.Pool;
 import com.edu.javeriana.backend.model.RolPool;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.AsignacionRolPoolRepository;
-import com.edu.javeriana.backend.repository.PoolRepository;
 import com.edu.javeriana.backend.repository.RolPoolRepository;
-import com.edu.javeriana.backend.repository.UsuarioRepository;
+import com.edu.javeriana.backend.service.interfaces.IEmpresaService;
+import com.edu.javeriana.backend.service.interfaces.IPoolService;
+import com.edu.javeriana.backend.service.interfaces.IUsuarioService;
+import org.springframework.context.annotation.Lazy;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -26,27 +29,26 @@ public class RolPoolService implements IRolPoolService {
 
     private final RolPoolRepository rolPoolRepository;
     private final AsignacionRolPoolRepository asignacionRolPoolRepository;
-    private final PoolRepository poolRepository;
-    private final UsuarioRepository usuarioRepository;
+    private final IPoolService poolService;
+    private final IUsuarioService usuarioService;
     private final ModelMapper modelMapper;
 
     public RolPoolService(RolPoolRepository rolPoolRepository,
                           AsignacionRolPoolRepository asignacionRolPoolRepository,
-                          PoolRepository poolRepository,
-                          UsuarioRepository usuarioRepository,
+                          @Lazy IPoolService poolService,
+                          @Lazy IUsuarioService usuarioService,
                           ModelMapper modelMapper) {
         this.rolPoolRepository           = rolPoolRepository;
         this.asignacionRolPoolRepository = asignacionRolPoolRepository;
-        this.poolRepository              = poolRepository;
-        this.usuarioRepository           = usuarioRepository;
+        this.poolService                 = poolService;
+        this.usuarioService              = usuarioService;
         this.modelMapper                 = modelMapper;
     }
 
     @Override
     @Transactional
     public RolPoolRegistroDTO crearRol(RolPoolRegistroDTO dto) {
-        Pool pool = poolRepository.findById(dto.getPoolId())
-                .orElseThrow(() -> new ResourceNotFoundException("Pool no encontrado"));
+        Pool pool = poolService.obtenerPoolEntity(dto.getPoolId());
 
         validarPermisoGestionRoles(dto.getUsuarioId(), pool);
 
@@ -121,11 +123,9 @@ public class RolPoolService implements IRolPoolService {
     @Override
     @Transactional(readOnly = true)
     public List<RolPoolRegistroDTO> listarRolesPorPool(Long poolId, Long usuarioId) {
-        Pool pool = poolRepository.findById(poolId)
-                .orElseThrow(() -> new ResourceNotFoundException("Pool no encontrado"));
+        Pool pool = poolService.obtenerPoolEntity(poolId);
 
-        Usuario solicitante = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Usuario solicitante = usuarioService.obtenerUsuarioEntity(usuarioId);
 
         if (!solicitante.getEmpresa().getId().equals(pool.getEmpresa().getId())) {
             throw new BusinessRuleException("Permiso denegado: La empresa no coincide.");
@@ -144,13 +144,11 @@ public class RolPoolService implements IRolPoolService {
     @Override
     @Transactional
     public AsignacionRolDTO asignarRolAUsuario(AsignacionRolDTO dto) {
-        Pool pool = poolRepository.findById(dto.getPoolId())
-                .orElseThrow(() -> new ResourceNotFoundException("Pool no encontrado"));
+        Pool pool = poolService.obtenerPoolEntity(dto.getPoolId());
 
         validarPermisoGestionRoles(dto.getUsuarioId(), pool);
 
-        Usuario destinatario = usuarioRepository.findById(dto.getUsuarioDestinoId())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario destino no encontrado"));
+        Usuario destinatario = usuarioService.obtenerUsuarioEntity(dto.getUsuarioDestinoId());
 
         if (!destinatario.getEmpresa().getId().equals(pool.getEmpresa().getId())) {
             throw new BusinessRuleException(
@@ -187,8 +185,7 @@ public class RolPoolService implements IRolPoolService {
     @Override
     @Transactional
     public void desasignarRolAUsuario(Long usuarioDestinoId, Long poolId, Long usuarioId) {
-        Pool pool = poolRepository.findById(poolId)
-                .orElseThrow(() -> new ResourceNotFoundException("Pool no encontrado"));
+        Pool pool = poolService.obtenerPoolEntity(poolId);
 
         validarPermisoGestionRoles(usuarioId, pool);
 
@@ -217,8 +214,7 @@ public class RolPoolService implements IRolPoolService {
     }
 
     private void validarPermisoGestionRoles(Long usuarioId, Pool pool) {
-        Usuario solicitante = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario solicitante no encontrado"));
+        Usuario solicitante = usuarioService.obtenerUsuarioEntity(usuarioId);
 
         if (!solicitante.getEmpresa().getId().equals(pool.getEmpresa().getId())) {
             throw new BusinessRuleException("No perteneces a la empresa de este pool.");

@@ -1,11 +1,13 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.service.interfaces.IUsuarioService;
+import com.edu.javeriana.backend.service.interfaces.IEmpresaService;
 import com.edu.javeriana.backend.dto.UsuarioLoginDTO;
 import com.edu.javeriana.backend.dto.UsuarioRegistroDTO;
 import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.model.Empresa;
 import com.edu.javeriana.backend.model.Usuario;
-import com.edu.javeriana.backend.repository.EmpresaRepository;
+import org.springframework.context.annotation.Lazy;
 import com.edu.javeriana.backend.repository.UsuarioRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -18,16 +20,16 @@ import java.util.stream.Collectors;
 public class UsuarioService implements IUsuarioService {
 
     private final UsuarioRepository usuarioRepository;
-    private final EmpresaRepository empresaRepository;
+    private final IEmpresaService empresaService;
     private final EmailService emailService;
     private final ModelMapper modelMapper;
 
     public UsuarioService(UsuarioRepository usuarioRepository,
-                          EmpresaRepository empresaRepository,
+                          @Lazy IEmpresaService empresaService,
                           EmailService emailService,
                           ModelMapper modelMapper) {
         this.usuarioRepository = usuarioRepository;
-        this.empresaRepository = empresaRepository;
+        this.empresaService    = empresaService;
         this.emailService      = emailService;
         this.modelMapper       = modelMapper;
     }
@@ -39,8 +41,7 @@ public class UsuarioService implements IUsuarioService {
             throw new IllegalArgumentException("Ya existe un usuario con este correo asociado a una cuenta");
         }
 
-        Empresa empresa = empresaRepository.findById(empresaId)
-                .orElseThrow(() -> new IllegalArgumentException("Empresa no encontrada"));
+        Empresa empresa = empresaService.obtenerEmpresaEntity(empresaId);
 
         Usuario usuario = new Usuario();
         usuario.setUsername(correo);
@@ -94,7 +95,7 @@ public class UsuarioService implements IUsuarioService {
     @Override
     @Transactional(readOnly = true)
     public List<UsuarioRegistroDTO> listarPorEmpresa(Long empresaId) {
-        if (!empresaRepository.existsById(empresaId)) {
+        if (!empresaService.existeEmpresa(empresaId)) {
             throw new ResourceNotFoundException("Empresa no encontrada");
         }
 
@@ -132,5 +133,24 @@ public class UsuarioService implements IUsuarioService {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         usuarioRepository.delete(usuario);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existeUsuarioPorUsername(String username) {
+        return usuarioRepository.findByUsername(username).isPresent();
+    }
+
+    @Override
+    @Transactional
+    public Usuario guardarUsuarioEntity(Usuario usuario) {
+        return usuarioRepository.save(usuario);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Usuario obtenerUsuarioEntity(Long id) {
+        return usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
     }
 }

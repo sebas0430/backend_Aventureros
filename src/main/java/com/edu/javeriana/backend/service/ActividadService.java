@@ -1,11 +1,16 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.service.interfaces.IUsuarioService;
+import com.edu.javeriana.backend.service.interfaces.IProcesoService;
+import com.edu.javeriana.backend.service.interfaces.IHistorialProcesoService;
+import com.edu.javeriana.backend.service.interfaces.IActividadService;
 import com.edu.javeriana.backend.dto.ActividadEdicionDTO;
 import com.edu.javeriana.backend.dto.ActividadRegistroDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
 import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.model.*;
-import com.edu.javeriana.backend.repository.*;
+import com.edu.javeriana.backend.repository.ActividadRepository;
+import org.springframework.context.annotation.Lazy;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -19,20 +24,20 @@ import java.util.stream.Collectors;
 public class ActividadService implements IActividadService {
 
     private final ActividadRepository actividadRepository;
-    private final ProcesoRepository procesoRepository;
-    private final UsuarioRepository usuarioRepository;
-    private final HistorialProcesoRepository historialProcesoRepository;
+    private final IProcesoService procesoService;
+    private final IUsuarioService usuarioService;
+    private final IHistorialProcesoService historialProcesoService;
     private final ModelMapper modelMapper;
 
     public ActividadService(ActividadRepository actividadRepository,
-                            ProcesoRepository procesoRepository,
-                            UsuarioRepository usuarioRepository,
-                            HistorialProcesoRepository historialProcesoRepository,
+                            @Lazy IProcesoService procesoService,
+                            @Lazy IUsuarioService usuarioService,
+                            @Lazy IHistorialProcesoService historialProcesoService,
                             ModelMapper modelMapper) {
         this.actividadRepository        = actividadRepository;
-        this.procesoRepository          = procesoRepository;
-        this.usuarioRepository          = usuarioRepository;
-        this.historialProcesoRepository = historialProcesoRepository;
+        this.procesoService             = procesoService;
+        this.usuarioService             = usuarioService;
+        this.historialProcesoService    = historialProcesoService;
         this.modelMapper                = modelMapper;
     }
 
@@ -43,11 +48,9 @@ public class ActividadService implements IActividadService {
     @Override
     public ActividadRegistroDTO crearActividad(ActividadRegistroDTO dto) {
 
-        Proceso proceso = procesoRepository.findById(dto.getProcesoId())
-                .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado"));
+        Proceso proceso = procesoService.obtenerProcesoEntity(dto.getProcesoId());
 
-        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Usuario usuario = usuarioService.obtenerUsuarioEntity(dto.getUsuarioId());
 
         boolean autorizado = RolGlobal.ADMINISTRADOR_EMPRESA.name().equals(usuario.getRol())
                 || RolGlobal.EDITOR.name().equals(usuario.getRol());
@@ -70,15 +73,7 @@ public class ActividadService implements IActividadService {
         actividad = actividadRepository.save(actividad);
         log.info("Actividad {} creada exitosamente en proceso {}", actividad.getId(), proceso.getId());
 
-        HistorialProceso historial = HistorialProceso.builder()
-                .proceso(proceso)
-                .usuario(usuario)
-                .accion("CREACION_ACTIVIDAD")
-                .detalle("Se agregó la actividad '" + actividad.getNombre()
-                        + "' de tipo '" + actividad.getTipoActividad()
-                        + "' con rol responsable '" + actividad.getRolResponsable() + "'.")
-                .build();
-        historialProcesoRepository.save(historial);
+        historialProcesoService.registrarAccion(proceso, usuario, "CREACION_ACTIVIDAD", "Se agregó la actividad '" + actividad.getNombre() + "' de tipo '" + actividad.getTipoActividad() + "' con rol responsable '" + actividad.getRolResponsable() + "'.");
 
         // Mapear entidad → DTO existente
         ActividadRegistroDTO response = modelMapper.map(actividad, ActividadRegistroDTO.class);
@@ -96,8 +91,7 @@ public class ActividadService implements IActividadService {
         Actividad actividad = actividadRepository.findById(actividadId)
                 .orElseThrow(() -> new ResourceNotFoundException("Actividad no encontrada"));
 
-        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Usuario usuario = usuarioService.obtenerUsuarioEntity(dto.getUsuarioId());
 
         boolean autorizado = RolGlobal.ADMINISTRADOR_EMPRESA.name().equals(usuario.getRol())
                 || RolGlobal.EDITOR.name().equals(usuario.getRol());
@@ -138,13 +132,7 @@ public class ActividadService implements IActividadService {
             actividad = actividadRepository.save(actividad);
             log.info("Actividad {} editada exitosamente", actividadId);
 
-            HistorialProceso historial = HistorialProceso.builder()
-                    .proceso(actividad.getProceso())
-                    .usuario(usuario)
-                    .accion("EDICION_ACTIVIDAD")
-                    .detalle("Actividad '" + actividad.getNombre() + "': " + cambios.toString().trim())
-                    .build();
-            historialProcesoRepository.save(historial);
+            historialProcesoService.registrarAccion(actividad.getProceso(), usuario, "EDICION_ACTIVIDAD", "Actividad '" + actividad.getNombre() + "': " + cambios.toString().trim());
         }
 
         // Mapear entidad → DTO existente
@@ -161,8 +149,7 @@ public class ActividadService implements IActividadService {
         Actividad actividad = actividadRepository.findById(actividadId)
                 .orElseThrow(() -> new ResourceNotFoundException("Actividad no encontrada"));
 
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Usuario usuario = usuarioService.obtenerUsuarioEntity(usuarioId);
 
         if (!RolGlobal.ADMINISTRADOR_EMPRESA.name().equals(usuario.getRol())) {
             throw new BusinessRuleException("Solo un administrador puede eliminar actividades.");
@@ -180,14 +167,7 @@ public class ActividadService implements IActividadService {
         }
         actividadRepository.saveAll(actividadesActivas);
 
-        HistorialProceso historial = HistorialProceso.builder()
-                .proceso(actividad.getProceso())
-                .usuario(usuario)
-                .accion("ELIMINACION_ACTIVIDAD")
-                .detalle("La actividad '" + actividad.getNombre()
-                        + "' fue eliminada. El flujo del proceso fue reajustado.")
-                .build();
-        historialProcesoRepository.save(historial);
+        historialProcesoService.registrarAccion(actividad.getProceso(), usuario, "ELIMINACION_ACTIVIDAD", "La actividad '" + actividad.getNombre() + "' fue eliminada. El flujo del proceso fue reajustado.");
     }
 
     // ─────────────────────────────────────────────
@@ -215,5 +195,17 @@ public class ActividadService implements IActividadService {
         ActividadRegistroDTO response = modelMapper.map(actividad, ActividadRegistroDTO.class);
         response.setProcesoId(actividad.getProceso().getId());
         return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existePorRolProceso(Long rolProcesoId) {
+        return actividadRepository.existsByRolProcesoId(rolProcesoId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Actividad> obtenerActividadesPorRolProceso(Long rolProcesoId) {
+        return actividadRepository.findByRolProcesoId(rolProcesoId);
     }
 }

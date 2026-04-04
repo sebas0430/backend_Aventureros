@@ -1,4 +1,4 @@
-package com.edu.javeriana.backend.service;
+package com.edu.javeriana.backend.service.interfaces;
 
 import com.edu.javeriana.backend.dto.ActividadEdicionDTO;
 import com.edu.javeriana.backend.dto.ActividadRegistroDTO;
@@ -19,4 +19,6 @@ public interface IActividadService {
     // Consultas
     List<ActividadRegistroDTO> listarPorProceso(Long procesoId);
     ActividadRegistroDTO obtenerPorId(Long actividadId);
+    boolean existePorRolProceso(Long rolProcesoId);
+    List<com.edu.javeriana.backend.model.Actividad> obtenerActividadesPorRolProceso(Long rolProcesoId);
 }

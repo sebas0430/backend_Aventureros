@@ -4,7 +4,7 @@ import com.edu.javeriana.backend.dto.LaneEdicionDTO;
 import com.edu.javeriana.backend.dto.LaneRegistroDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
 import com.edu.javeriana.backend.exception.ResourceNotFoundException;
-import com.edu.javeriana.backend.service.ILaneService;
+import com.edu.javeriana.backend.service.interfaces.ILaneService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
