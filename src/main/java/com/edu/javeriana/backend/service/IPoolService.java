@@ -8,11 +8,11 @@ import java.util.List;
 
 public interface IPoolService {
 
-    Pool crearPool(PoolRegistroDTO dto);
-
-    Pool editarPool(Long id, PoolEdicionDTO dto);
-
+    PoolRegistroDTO crearPool(PoolRegistroDTO dto);
+ 
+    PoolEdicionDTO editarPool(Long id, PoolEdicionDTO dto);
+ 
     void eliminarPool(Long id, Long usuarioId);
-
-    List<Pool> listarPoolsPorEmpresa(Long empresaId);
+ 
+    List<PoolRegistroDTO> listarPoolsPorEmpresa(Long empresaId);
 }

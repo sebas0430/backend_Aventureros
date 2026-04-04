@@ -8,11 +8,11 @@ import java.util.List;
 
 public interface ILaneService {
 
-    Lane crearLane(LaneRegistroDTO dto);
-
-    Lane editarLane(Long id, LaneEdicionDTO dto);
-
+     LaneRegistroDTO crearLane(LaneRegistroDTO dto);
+ 
+    LaneEdicionDTO editarLane(Long id, LaneEdicionDTO dto);
+ 
     void eliminarLane(Long id, Long usuarioId);
-
-    List<Lane> listarLanesPorPool(Long poolId, Long usuarioId);
+ 
+    List<LaneRegistroDTO> listarLanesPorPool(Long poolId, Long usuarioId);
 }

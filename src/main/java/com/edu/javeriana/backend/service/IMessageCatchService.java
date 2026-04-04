@@ -7,9 +7,9 @@ import java.util.List;
 
 public interface IMessageCatchService {
 
-    List<RecepcionMensaje> recibirMensaje(MensajeCatchDTO dto);
-
-    List<RecepcionMensaje> listarRecepcionesPorProceso(Long procesoId);
-
-    List<RecepcionMensaje> listarRecepcionesPorCatch(Long eventoCatchId);
+    List<MensajeCatchDTO> recibirMensaje(MensajeCatchDTO dto);
+ 
+    List<MensajeCatchDTO> listarRecepcionesPorProceso(Long procesoId);
+ 
+    List<MensajeCatchDTO> listarRecepcionesPorCatch(Long eventoCatchId);
 }

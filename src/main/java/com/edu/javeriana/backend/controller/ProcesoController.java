@@ -3,6 +3,8 @@ package com.edu.javeriana.backend.controller;
 import com.edu.javeriana.backend.dto.ProcesoCompartirDTO;
 import com.edu.javeriana.backend.dto.ProcesoEdicionDTO;
 import com.edu.javeriana.backend.dto.ProcesoRegistroDTO;
+import com.edu.javeriana.backend.exception.BusinessRuleException;
+import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.model.EstadoProceso;
 import com.edu.javeriana.backend.model.Proceso;
 import com.edu.javeriana.backend.service.IProcesoService;
@@ -22,20 +24,15 @@ public class ProcesoController {
 
     private final IProcesoService procesoService;
 
-    // POST /api/procesos
     @PostMapping
     public ResponseEntity<ProcesoRegistroDTO> crearProceso(@Valid @RequestBody ProcesoRegistroDTO dto) {
-        Proceso proceso = procesoService.crearProceso(dto);
-        ProcesoRegistroDTO respuesta = new ProcesoRegistroDTO();
-        respuesta.setNombre(proceso.getNombre());
-        respuesta.setDescripcion(proceso.getDescripcion());
-        respuesta.setCategoria(proceso.getCategoria());
-        respuesta.setEmpresaId(proceso.getAutor().getEmpresa().getId());
-        respuesta.setAutorId(proceso.getAutor().getId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED).body(procesoService.crearProceso(dto));
+        } catch (BusinessRuleException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
-    // GET /api/procesos/empresa/{empresaId}
     @GetMapping("/empresa/{empresaId}")
     public ResponseEntity<?> listarPorEmpresa(
             @PathVariable Long empresaId,
@@ -51,94 +48,108 @@ public class ProcesoController {
         }
     }
 
-    // GET /api/procesos/{id}
     @GetMapping("/{id}")
     public ResponseEntity<Proceso> obtenerProceso(@PathVariable Long id) {
-        return ResponseEntity.ok(procesoService.obtenerProcesoPorId(id));
+        try {
+            return ResponseEntity.ok(procesoService.obtenerProcesoPorId(id));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
-    // GET /api/procesos/autor/{autorId}
     @GetMapping("/autor/{autorId}")
     public ResponseEntity<List<Proceso>> listarPorAutor(@PathVariable Long autorId) {
         return ResponseEntity.ok(procesoService.listarPorAutor(autorId));
     }
 
-    // PATCH /api/procesos/{id}/definicion
     @PatchMapping("/{id}/definicion")
     public ResponseEntity<ProcesoEdicionDTO> actualizarDefinicion(
             @PathVariable Long id,
             @RequestBody Map<String, String> body) {
-        String definicionJson = body.get("definicionJson");
-        Proceso actualizado = procesoService.actualizarDefinicion(id, definicionJson);
-        ProcesoEdicionDTO respuesta = new ProcesoEdicionDTO();
-        respuesta.setNombre(actualizado.getNombre());
-        respuesta.setDescripcion(actualizado.getDescripcion());
-        respuesta.setCategoria(actualizado.getCategoria());
-        return ResponseEntity.ok(respuesta);
+        try {
+            return ResponseEntity.ok(procesoService.actualizarDefinicion(id, body.get("definicionJson")));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
-    // PUT /api/procesos/{id}
     @PutMapping("/{id}")
-    public ResponseEntity<ProcesoEdicionDTO> editarProceso(
-            @PathVariable Long id,
-            @Valid @RequestBody ProcesoEdicionDTO dto) {
-        Proceso actualizado = procesoService.editarProceso(id, dto);
-        ProcesoEdicionDTO respuesta = new ProcesoEdicionDTO();
-        respuesta.setNombre(actualizado.getNombre());
-        respuesta.setDescripcion(actualizado.getDescripcion());
-        respuesta.setCategoria(actualizado.getCategoria());
-        respuesta.setUsuarioId(dto.getUsuarioId());
-        return ResponseEntity.ok(respuesta);
+    public ResponseEntity<ProcesoEdicionDTO> editarProceso(@PathVariable Long id, @Valid @RequestBody ProcesoEdicionDTO dto) {
+        try {
+            return ResponseEntity.ok(procesoService.editarProceso(id, dto));
+        } catch (BusinessRuleException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
-    // DELETE /api/procesos/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarProceso(@PathVariable Long id, @RequestParam Long usuarioId) {
-        procesoService.eliminarProceso(id, usuarioId);
-        return ResponseEntity.noContent().build();
+        try {
+            procesoService.eliminarProceso(id, usuarioId);
+            return ResponseEntity.noContent().build();
+        } catch (BusinessRuleException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
-    // PATCH /api/procesos/{id}/estado
     @PatchMapping("/{id}/estado")
     public ResponseEntity<ProcesoEdicionDTO> cambiarEstado(
             @PathVariable Long id,
             @RequestBody Map<String, Object> body) {
-        EstadoProceso nuevoEstado = EstadoProceso.valueOf((String) body.get("estado"));
-        Long usuarioId = ((Number) body.get("usuarioId")).longValue();
-        Proceso actualizado = procesoService.cambiarEstado(id, nuevoEstado, usuarioId);
-        ProcesoEdicionDTO respuesta = new ProcesoEdicionDTO();
-        respuesta.setNombre(actualizado.getNombre());
-        respuesta.setDescripcion(actualizado.getDescripcion());
-        respuesta.setCategoria(actualizado.getCategoria());
-        respuesta.setUsuarioId(usuarioId);
-        return ResponseEntity.ok(respuesta);
+        try {
+            EstadoProceso nuevoEstado = EstadoProceso.valueOf((String) body.get("estado"));
+            Long usuarioId = ((Number) body.get("usuarioId")).longValue();
+            return ResponseEntity.ok(procesoService.cambiarEstado(id, nuevoEstado, usuarioId));
+        } catch (BusinessRuleException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
-    // POST /api/procesos/{id}/compartir
     @PostMapping("/{id}/compartir")
     public ResponseEntity<ProcesoCompartirDTO> compartirProceso(
             @PathVariable Long id,
             @Valid @RequestBody ProcesoCompartirDTO dto) {
-        procesoService.compartirProceso(id, dto);
-        return ResponseEntity.ok(dto);
+        try {
+            procesoService.compartirProceso(id, dto);
+            return ResponseEntity.ok(dto);
+        } catch (BusinessRuleException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
-    // DELETE /api/procesos/{id}/compartir/{poolDestinoId}
     @DeleteMapping("/{id}/compartir/{poolDestinoId}")
     public ResponseEntity<Void> quitarComparticionProceso(
             @PathVariable Long id,
             @PathVariable Long poolDestinoId,
             @RequestParam Long usuarioId) {
-        procesoService.quitarComparticionProceso(id, poolDestinoId, usuarioId);
-        return ResponseEntity.noContent().build();
+        try {
+            procesoService.quitarComparticionProceso(id, poolDestinoId, usuarioId);
+            return ResponseEntity.noContent().build();
+        } catch (BusinessRuleException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
- 
 
-    // GET /api/procesos/compartidos/{poolId}
     @GetMapping("/compartidos/{poolId}")
     public ResponseEntity<List<Proceso>> listarProcesosCompartidosConPool(
             @PathVariable Long poolId,
             @RequestParam Long usuarioId) {
-        return ResponseEntity.ok(procesoService.listarProcesosCompartidosConPool(poolId, usuarioId));
+        try {
+            return ResponseEntity.ok(procesoService.listarProcesosCompartidosConPool(poolId, usuarioId));
+        } catch (BusinessRuleException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 }

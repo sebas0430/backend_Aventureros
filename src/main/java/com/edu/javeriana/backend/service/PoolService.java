@@ -10,30 +10,39 @@ import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.EmpresaRepository;
 import com.edu.javeriana.backend.repository.PoolRepository;
 import com.edu.javeriana.backend.repository.UsuarioRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class PoolService implements IPoolService {
 
     private final PoolRepository poolRepository;
     private final EmpresaRepository empresaRepository;
     private final UsuarioRepository usuarioRepository;
+    private final ModelMapper modelMapper;
+
+    public PoolService(PoolRepository poolRepository,
+                       EmpresaRepository empresaRepository,
+                       UsuarioRepository usuarioRepository,
+                       ModelMapper modelMapper) {
+        this.poolRepository    = poolRepository;
+        this.empresaRepository = empresaRepository;
+        this.usuarioRepository = usuarioRepository;
+        this.modelMapper       = modelMapper;
+    }
 
     @Override
     @Transactional
-    public Pool crearPool(PoolRegistroDTO dto) {
-        // Validar empresa
+    public PoolRegistroDTO crearPool(PoolRegistroDTO dto) {
         Empresa empresa = empresaRepository.findById(dto.getEmpresaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada"));
 
-        // Validar que el usuario existe, es ADMIN y pertenece a la empresa
         validarUsuarioAdministradorDeEmpresa(dto.getUsuarioId(), empresa.getId());
 
         Pool pool = Pool.builder()
@@ -44,16 +53,18 @@ public class PoolService implements IPoolService {
 
         Pool guardado = poolRepository.save(pool);
 
-        // Auditoría
         log.info("AUDITORIA: Usuario {} (ADMIN) registró el Nuevo Pool '{}' (ID={}) para la Empresa ID={}",
                 dto.getUsuarioId(), guardado.getNombre(), guardado.getId(), empresa.getId());
 
-        return guardado;
+        PoolRegistroDTO response = modelMapper.map(guardado, PoolRegistroDTO.class);
+        response.setEmpresaId(guardado.getEmpresa().getId());
+        response.setUsuarioId(dto.getUsuarioId());
+        return response;
     }
 
     @Override
     @Transactional
-    public Pool editarPool(Long id, PoolEdicionDTO dto) {
+    public PoolEdicionDTO editarPool(Long id, PoolEdicionDTO dto) {
         Pool pool = poolRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pool no encontrado"));
 
@@ -64,11 +75,12 @@ public class PoolService implements IPoolService {
 
         Pool actualizado = poolRepository.save(pool);
 
-        // Auditoría
         log.info("AUDITORIA: Usuario {} (ADMIN) actualizó el Pool ID={} (Nuevo Nombre: '{}')",
                 dto.getUsuarioId(), actualizado.getId(), actualizado.getNombre());
 
-        return actualizado;
+        PoolEdicionDTO response = modelMapper.map(actualizado, PoolEdicionDTO.class);
+        response.setUsuarioId(dto.getUsuarioId());
+        return response;
     }
 
     @Override
@@ -79,24 +91,25 @@ public class PoolService implements IPoolService {
 
         validarUsuarioAdministradorDeEmpresa(usuarioId, pool.getEmpresa().getId());
 
-        // Aseguraremos que no deje procesos huerfanos,
-        // JPA se encarga del cascade si lo mapeamos en @OneToMany o levanta un error si decidimos que no
         poolRepository.delete(pool);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Pool> listarPoolsPorEmpresa(Long empresaId) {
+    public List<PoolRegistroDTO> listarPoolsPorEmpresa(Long empresaId) {
         if (!empresaRepository.existsById(empresaId)) {
             throw new ResourceNotFoundException("Empresa no encontrada");
         }
-        return poolRepository.findByEmpresaId(empresaId);
+        return poolRepository.findByEmpresaId(empresaId)
+                .stream()
+                .map(pool -> {
+                    PoolRegistroDTO dto = modelMapper.map(pool, PoolRegistroDTO.class);
+                    dto.setEmpresaId(pool.getEmpresa().getId());
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 
-    /**
-     * Asegura que el usuario solicitante es un administrador
-     * y, ademas, pertenece a la empresa sobre la cual administra (evitar que admin de otra empresa acceda).
-     */
     private void validarUsuarioAdministradorDeEmpresa(Long usuarioId, Long empresaId) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
