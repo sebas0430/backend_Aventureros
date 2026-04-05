@@ -29,7 +29,8 @@ import java.util.Map;
 @Slf4j
 @Service
 public class RolProcesoService implements IRolProcesoService {
-
+    private static final String ROLPROCESO_NO_ENCONTRADO = "Rol de proceso no encontrado";
+    private static final String ADMINISTRADOR_EMPRESA = "ADMINISTRADOR_EMPRESA";
     private final RolProcesoRepository rolProcesoRepository;
     private final IEmpresaService empresaService;
     private final IUsuarioService usuarioService;
@@ -59,7 +60,7 @@ public class RolProcesoService implements IRolProcesoService {
             throw new BusinessRuleException("No perteneces a esta empresa");
         }
 
-        if (!"ADMINISTRADOR_EMPRESA".equals(solicitante.getRol())) {
+        if (!ADMINISTRADOR_EMPRESA.equals(solicitante.getRol())) {
             throw new BusinessRuleException(
                     "Solo un administrador de la empresa puede crear roles de proceso");
         }
@@ -89,7 +90,7 @@ public class RolProcesoService implements IRolProcesoService {
     @Transactional
     public RolProcesoEdicionDTO editarRolProceso(Long id, RolProcesoEdicionDTO dto) {
         RolProceso rol = rolProcesoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Rol de proceso no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(ROLPROCESO_NO_ENCONTRADO));
 
         Usuario solicitante = usuarioService.obtenerUsuarioEntity(dto.getUsuarioId());
 
@@ -97,7 +98,7 @@ public class RolProcesoService implements IRolProcesoService {
             throw new BusinessRuleException("No perteneces a la empresa de este rol");
         }
 
-        if (!"ADMINISTRADOR_EMPRESA".equals(solicitante.getRol())) {
+        if (!ADMINISTRADOR_EMPRESA.equals(solicitante.getRol())) {
             throw new BusinessRuleException(
                     "Solo un administrador de la empresa puede editar roles de proceso");
         }
@@ -124,7 +125,7 @@ public class RolProcesoService implements IRolProcesoService {
         RolProceso actualizado = rolProcesoRepository.save(rol);
         log.info("AUDITORIA: Usuario {} (ADMIN) editó el Rol de Proceso ID={} — {}",
                 solicitante.getId(), actualizado.getId(),
-                cambios.length() > 0 ? cambios.toString().trim() : "Sin cambios detectados");
+                cambios.isEmpty() ? "Sin cambios detectados" : cambios.toString().trim());
 
         RolProcesoEdicionDTO response = modelMapper.map(actualizado, RolProcesoEdicionDTO.class);
         response.setUsuarioId(dto.getUsuarioId());
@@ -156,7 +157,7 @@ public class RolProcesoService implements IRolProcesoService {
     @Transactional
     public void eliminarRolProceso(Long id, Long usuarioId) {
         RolProceso rol = rolProcesoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Rol de proceso no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(ROLPROCESO_NO_ENCONTRADO));
 
         Usuario solicitante = usuarioService.obtenerUsuarioEntity(usuarioId);
 
@@ -164,7 +165,7 @@ public class RolProcesoService implements IRolProcesoService {
             throw new BusinessRuleException("No perteneces a la empresa de este rol");
         }
 
-        if (!"ADMINISTRADOR_EMPRESA".equals(solicitante.getRol())) {
+        if (!ADMINISTRADOR_EMPRESA.equals(solicitante.getRol())) {
             throw new BusinessRuleException(
                     "Solo un administrador de la empresa puede eliminar roles de proceso");
         }
@@ -184,7 +185,7 @@ public class RolProcesoService implements IRolProcesoService {
     @Transactional(readOnly = true)
     public RolProcesoRegistroDTO obtenerRolProcesoPorId(Long id) {
         RolProceso rol = rolProcesoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Rol de proceso no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(ROLPROCESO_NO_ENCONTRADO));
 
         RolProcesoRegistroDTO dto = modelMapper.map(rol, RolProcesoRegistroDTO.class);
         dto.setEmpresaId(rol.getEmpresa().getId());
@@ -212,7 +213,7 @@ public class RolProcesoService implements IRolProcesoService {
     @Transactional(readOnly = true)
     public RolProcesoDetalleDTO consultarRolProcesoDetalle(Long id) {
         RolProceso rol = rolProcesoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Rol de proceso no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(ROLPROCESO_NO_ENCONTRADO));
         return construirDetalle(rol);
     }
 

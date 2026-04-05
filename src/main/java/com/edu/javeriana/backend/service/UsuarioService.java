@@ -77,9 +77,9 @@ public class UsuarioService implements IUsuarioService {
             throw new IllegalArgumentException("Credenciales inválidas");
         }
 
-        if (!usuario.getActivo()) {
-            throw new IllegalArgumentException("El usuario se encuentra inactivo");
-        }
+        if (usuario.getActivo() == null || !usuario.getActivo()) {
+        throw new IllegalArgumentException("El usuario se encuentra inactivo");
+        }   
 
         UsuarioLoginDTO response = modelMapper.map(usuario, UsuarioLoginDTO.class);
         response.setCorreo(usuario.getUsername());

@@ -41,8 +41,6 @@ public class EmailService {
 
         } catch (Exception e) {
             log.error("Error al enviar el correo de invitación a {}: {}", destinatario, e.getMessage());
-            // Dependiendo de tu regla de negocio, podrías relanzar la excepción para revertir la creación del usuario
-            // throw new RuntimeException("No se pudo enviar el correo de invitación", e);
         }
     }
 }
