@@ -150,7 +150,7 @@ class ActividadServiceTest {
         actividadService.eliminarActividad(1L, 1L);
 
         assertFalse(actividad.getActiva());
-        verify(actividadRepository, times(2)).save(any(Actividad.class));
+        verify(actividadRepository, times(1)).save(any(Actividad.class));
         verify(actividadRepository, times(1)).saveAll(anyList());
     }
 

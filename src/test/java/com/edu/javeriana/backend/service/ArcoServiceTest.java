@@ -152,6 +152,6 @@ class ArcoServiceTest {
         when(arcoRepository.findByProcesoIdAndDestinoIdAndDestinoTipo(1L, 1L, TipoNodo.ACTIVIDAD)).thenReturn(Collections.emptyList());
 
         arcoService.eliminarArcosPorNodo(1L, 1L, TipoNodo.ACTIVIDAD);
-        verify(arcoRepository).deleteAll(any());
+        verify(arcoRepository, times(2)).deleteAll(any());
     }
 }

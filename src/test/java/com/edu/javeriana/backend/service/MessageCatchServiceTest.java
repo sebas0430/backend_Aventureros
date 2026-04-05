@@ -119,7 +119,7 @@ class MessageCatchServiceTest {
 
         List<MensajeCatchDTO> res = messageCatchService.recibirMensaje(dto);
         assertNotNull(res);
-        verify(instanciaProcesoRepository).save(any());
+        verify(instanciaProcesoRepository, times(2)).save(any());
     }
 
     @Test
