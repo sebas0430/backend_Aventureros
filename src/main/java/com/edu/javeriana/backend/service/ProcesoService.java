@@ -24,7 +24,9 @@ public class ProcesoService implements IProcesoService {
 
     private static final String PROCESO_NOT_FOUND = "Proceso no encontrado";
     private static final String USUARIO_NOT_FOUND = "Usuario no encontrado";
-
+    private static final String EDITAR = "EDITAR";
+    private static final String ADMINISTRADOR_EMPRESA = "ADMINISTRADOR_EMPRESA";
+    
     private final ProcesoRepository procesoRepository;
     private final EmpresaRepository empresaRepository;
     private final UsuarioRepository usuarioRepository;
@@ -158,13 +160,13 @@ public class ProcesoService implements IProcesoService {
         Proceso proceso = procesoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(PROCESO_NOT_FOUND));
 
-        validarPermisoDeRol(dto.getUsuarioId(), proceso.getPool().getId(), "EDITAR");
+        validarPermisoDeRol(dto.getUsuarioId(), proceso.getPool().getId(), EDITAR);
 
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
         boolean esAutor = proceso.getAutor().getId().equals(usuario.getId());
-        boolean esAdmin = "ADMINISTRADOR_EMPRESA".equals(usuario.getRol());
+        boolean esAdmin = ADMINISTRADOR_EMPRESA.equals(usuario.getRol());
 
         if (!esAutor && !esAdmin)
             throw new BusinessRuleException("No tienes permisos para editar este proceso.");
@@ -204,7 +206,7 @@ public class ProcesoService implements IProcesoService {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
-        if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol()))
+        if (!ADMINISTRADOR_EMPRESA.equals(usuario.getRol()))
             throw new BusinessRuleException("Solo un administrador puede eliminar procesos.");
 
         proceso.setEstado(EstadoProceso.INACTIVO);
@@ -220,12 +222,12 @@ public class ProcesoService implements IProcesoService {
                 .orElseThrow(() -> new ResourceNotFoundException(PROCESO_NOT_FOUND));
 
         validarPermisoDeRol(usuarioId, proceso.getPool().getId(),
-                nuevoEstado == EstadoProceso.PUBLICADO ? "PUBLICAR" : "EDITAR");
+                nuevoEstado == EstadoProceso.PUBLICADO ? "PUBLICAR" : EDITAR);
 
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
-        if (nuevoEstado == EstadoProceso.PUBLICADO && !"ADMINISTRADOR_EMPRESA".equals(usuario.getRol()))
+        if (nuevoEstado == EstadoProceso.PUBLICADO && !ADMINISTRADOR_EMPRESA.equals(usuario.getRol()))
             throw new BusinessRuleException("Solo un administrador puede publicar procesos.");
 
         proceso.setEstado(nuevoEstado);
@@ -245,7 +247,7 @@ public class ProcesoService implements IProcesoService {
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
-        if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol()) || !usuario.getEmpresa().getId().equals(proceso.getEmpresa().getId()))
+        if (!ADMINISTRADOR_EMPRESA.equals(usuario.getRol()) || !usuario.getEmpresa().getId().equals(proceso.getEmpresa().getId()))
             throw new BusinessRuleException("Solo un administrador global de la empresa dueña puede compartir el proceso");
 
         Pool poolDestino = poolRepository.findById(dto.getPoolDestinoId())
@@ -269,7 +271,7 @@ public class ProcesoService implements IProcesoService {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
-        if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol()) || !usuario.getEmpresa().getId().equals(proceso.getEmpresa().getId()))
+        if (!ADMINISTRADOR_EMPRESA.equals(usuario.getRol()) || !usuario.getEmpresa().getId().equals(proceso.getEmpresa().getId()))
             throw new BusinessRuleException("Solo un administrador de la empresa dueña puede quitar la compartición");
 
         procesoCompartidoRepository.deleteByProcesoIdAndPoolDestinoId(procesoId, poolDestinoId);
@@ -299,7 +301,7 @@ public class ProcesoService implements IProcesoService {
         Usuario solicitante = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
-        if ("ADMINISTRADOR_EMPRESA".equals(solicitante.getRol())) return;
+        if (ADMINISTRADOR_EMPRESA.equals(solicitante.getRol())) return;
 
         AsignacionRolPool asignacion = asignacionRolPoolRepository.findByUsuarioIdAndPoolId(usuarioId, poolId)
                 .orElseThrow(() -> new BusinessRuleException("No cuentas con ningún rol asignado en este pool/departamento."));
