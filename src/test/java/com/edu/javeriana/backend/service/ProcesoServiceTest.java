@@ -3,7 +3,7 @@ package com.edu.javeriana.backend.service;
 import com.edu.javeriana.backend.dto.ProcesoEdicionDTO;
 import com.edu.javeriana.backend.dto.ProcesoRegistroDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
-import com.edu.javeriana.backend.exception.ResourceNotFoundException;
+
 import com.edu.javeriana.backend.model.*;
 import com.edu.javeriana.backend.repository.*;
 import com.edu.javeriana.backend.service.interfaces.IHistorialProcesoService;

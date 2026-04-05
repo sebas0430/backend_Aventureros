@@ -3,7 +3,6 @@ package com.edu.javeriana.backend.service;
 import com.edu.javeriana.backend.dto.LaneEdicionDTO;
 import com.edu.javeriana.backend.dto.LaneRegistroDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
-import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.model.Empresa;
 import com.edu.javeriana.backend.model.Lane;
 import com.edu.javeriana.backend.model.Pool;

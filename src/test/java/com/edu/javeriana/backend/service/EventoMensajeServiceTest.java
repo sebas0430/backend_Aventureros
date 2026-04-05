@@ -4,7 +4,7 @@ import com.edu.javeriana.backend.dto.EventoMensajeRegistroDTO;
 import com.edu.javeriana.backend.dto.MensajeEjecucionDTO;
 import com.edu.javeriana.backend.dto.MensajeLanzarDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
-import com.edu.javeriana.backend.exception.ResourceNotFoundException;
+
 import com.edu.javeriana.backend.model.*;
 import com.edu.javeriana.backend.repository.EventoMensajeRepository;
 import com.edu.javeriana.backend.repository.MensajeEjecucionRepository;

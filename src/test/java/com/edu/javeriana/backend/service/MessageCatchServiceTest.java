@@ -2,7 +2,6 @@ package com.edu.javeriana.backend.service;
 
 import com.edu.javeriana.backend.dto.MensajeCatchDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
-import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.model.*;
 import com.edu.javeriana.backend.repository.*;
 import org.junit.jupiter.api.BeforeEach;

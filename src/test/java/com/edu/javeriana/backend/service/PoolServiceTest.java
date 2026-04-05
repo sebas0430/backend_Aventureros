@@ -3,7 +3,7 @@ package com.edu.javeriana.backend.service;
 import com.edu.javeriana.backend.dto.PoolEdicionDTO;
 import com.edu.javeriana.backend.dto.PoolRegistroDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
-import com.edu.javeriana.backend.exception.ResourceNotFoundException;
+
 import com.edu.javeriana.backend.model.Empresa;
 import com.edu.javeriana.backend.model.Pool;
 import com.edu.javeriana.backend.model.Usuario;

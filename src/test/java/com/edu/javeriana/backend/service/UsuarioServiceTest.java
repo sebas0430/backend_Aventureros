@@ -2,7 +2,6 @@ package com.edu.javeriana.backend.service;
 
 import com.edu.javeriana.backend.dto.UsuarioLoginDTO;
 import com.edu.javeriana.backend.dto.UsuarioRegistroDTO;
-import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.model.Empresa;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.UsuarioRepository;

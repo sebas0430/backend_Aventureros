@@ -59,11 +59,10 @@ class GatewayControllerTest {
     }
 
     @Test
-    void obtenerGateway() {
-        GatewayRegistroDTO dto = new GatewayRegistroDTO();
-        Mockito.when(gatewayService.obtenerGateway(1L)).thenReturn(dto);
-        ResponseEntity<GatewayRegistroDTO> response = gatewayController.obtenerGateway(1L);
+    void eliminarGatewayPorProceso() {
+        ResponseEntity<Map<String, String>> response = gatewayController.eliminarGatewaysPorProceso(2L, 1L);
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        Mockito.verify(gatewayService).eliminarGatewaysPorProceso(2L, 1L);
     }
 
     @Test

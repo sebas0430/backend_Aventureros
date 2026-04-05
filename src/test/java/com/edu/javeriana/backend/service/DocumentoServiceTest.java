@@ -1,7 +1,7 @@
 package com.edu.javeriana.backend.service;
 
 import com.edu.javeriana.backend.dto.DocumentoDTO;
-import com.edu.javeriana.backend.exception.ResourceNotFoundException;
+
 import com.edu.javeriana.backend.model.Documento;
 import com.edu.javeriana.backend.model.Proceso;
 import com.edu.javeriana.backend.repository.DocumentoRepository;

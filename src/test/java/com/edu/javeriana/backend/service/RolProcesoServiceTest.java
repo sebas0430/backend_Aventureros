@@ -4,7 +4,7 @@ import com.edu.javeriana.backend.dto.RolProcesoDetalleDTO;
 import com.edu.javeriana.backend.dto.RolProcesoEdicionDTO;
 import com.edu.javeriana.backend.dto.RolProcesoRegistroDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
-import com.edu.javeriana.backend.exception.ResourceNotFoundException;
+
 import com.edu.javeriana.backend.model.Empresa;
 import com.edu.javeriana.backend.model.RolProceso;
 import com.edu.javeriana.backend.model.Usuario;

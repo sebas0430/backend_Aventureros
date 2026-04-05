@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -66,7 +67,7 @@ class NotificacionExternaServiceTest {
         conector = ConectorExterno.builder()
                 .id(1L)
                 .nombre("Webhook 1")
-                .tipo(ConectorTipo.WEBHOOK)
+                .tipo(TipoConectorExterno.WEBHOOK)
                 .empresa(empresa)
                 .activo(true)
                 .maxReintentos(3)
@@ -79,7 +80,7 @@ class NotificacionExternaServiceTest {
         dto.setEmpresaId(1L);
         dto.setUsuarioId(1L);
         dto.setNombre("Nuevo Conector");
-        dto.setTipo(ConectorTipo.EMAIL);
+        dto.setTipo(TipoConectorExterno.EMAIL);
 
         when(empresaService.obtenerEmpresaEntity(1L)).thenReturn(empresa);
         when(usuarioService.obtenerUsuarioEntity(1L)).thenReturn(adminUsuario);
@@ -97,7 +98,7 @@ class NotificacionExternaServiceTest {
         ConectorExternoRegistroDTO dto = new ConectorExternoRegistroDTO();
         dto.setUsuarioId(1L);
         dto.setNombre("Nombre Editado");
-        dto.setTipo(ConectorTipo.WEBHOOK);
+        dto.setTipo(TipoConectorExterno.WEBHOOK);
 
         when(conectorExternoRepository.findById(1L)).thenReturn(Optional.of(conector));
         when(usuarioService.obtenerUsuarioEntity(1L)).thenReturn(adminUsuario);

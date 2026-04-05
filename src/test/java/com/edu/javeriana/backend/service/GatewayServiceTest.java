@@ -3,7 +3,7 @@ package com.edu.javeriana.backend.service;
 import com.edu.javeriana.backend.dto.GatewayEdicionDTO;
 import com.edu.javeriana.backend.dto.GatewayRegistroDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
-import com.edu.javeriana.backend.exception.ResourceNotFoundException;
+
 import com.edu.javeriana.backend.model.Gateway;
 import com.edu.javeriana.backend.model.Proceso;
 import com.edu.javeriana.backend.model.TipoGateway;
@@ -133,7 +133,7 @@ class GatewayServiceTest {
 
     @Test
     void listarGatewaysPorProceso_Exitoso() {
-        when(procesoService.existsProceso(1L)).thenReturn(true);
+        when(procesoService.existeProceso(1L)).thenReturn(true);
         when(gatewayRepository.findByProcesoId(1L)).thenReturn(List.of(gateway));
         when(modelMapper.map(any(), eq(GatewayRegistroDTO.class))).thenReturn(new GatewayRegistroDTO());
 

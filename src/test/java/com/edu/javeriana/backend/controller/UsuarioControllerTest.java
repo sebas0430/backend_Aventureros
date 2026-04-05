@@ -56,13 +56,12 @@ class UsuarioControllerTest {
 
         UsuarioLoginDTO dto = new UsuarioLoginDTO();
         dto.setCorreo("test@test.com");
-        dto.setToken("my-token");
 
         Mockito.when(usuarioService.iniciarSesion("test@test.com", "pass")).thenReturn(dto);
 
         ResponseEntity<UsuarioLoginDTO> response = usuarioController.iniciarSesion(body);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("my-token", response.getBody().getToken());
+        assertEquals("test@test.com", response.getBody().getCorreo());
     }
 
     @Test

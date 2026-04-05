@@ -33,12 +33,12 @@ class EventoMensajeControllerTest {
     @Test
     void crearEvento() {
         EventoMensajeRegistroDTO dto = new EventoMensajeRegistroDTO();
-        dto.setNombre("Evento M X");
+        dto.setNombreMensaje("Evento M X");
         Mockito.when(eventoMensajeService.crearEvento(any())).thenReturn(dto);
 
         ResponseEntity<EventoMensajeRegistroDTO> response = eventoMensajeController.crearEvento(dto);
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals("Evento M X", response.getBody().getNombre());
+        assertEquals("Evento M X", response.getBody().getNombreMensaje());
     }
 
     @Test
