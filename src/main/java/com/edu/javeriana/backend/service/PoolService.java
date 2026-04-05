@@ -10,7 +10,6 @@ import com.edu.javeriana.backend.model.Pool;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.PoolRepository;
 import com.edu.javeriana.backend.service.interfaces.IEmpresaService;
-import com.edu.javeriana.backend.service.interfaces.IPoolService;
 import com.edu.javeriana.backend.service.interfaces.IUsuarioService;
 import org.springframework.context.annotation.Lazy;
 import lombok.extern.slf4j.Slf4j;
@@ -19,11 +18,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 @Slf4j
 @Service
 public class PoolService implements IPoolService {
+
+    private static final String POOL_NOT_FOUND = "Pool no encontrado";
 
     private final PoolRepository poolRepository;
     private final IEmpresaService empresaService;
@@ -68,7 +69,7 @@ public class PoolService implements IPoolService {
     @Transactional
     public PoolEdicionDTO editarPool(Long id, PoolEdicionDTO dto) {
         Pool pool = poolRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Pool no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(POOL_NOT_FOUND));
 
         validarUsuarioAdministradorDeEmpresa(dto.getUsuarioId(), pool.getEmpresa().getId());
 
@@ -89,7 +90,7 @@ public class PoolService implements IPoolService {
     @Transactional
     public void eliminarPool(Long id, Long usuarioId) {
         Pool pool = poolRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Pool no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(POOL_NOT_FOUND));
 
         validarUsuarioAdministradorDeEmpresa(usuarioId, pool.getEmpresa().getId());
 
@@ -109,7 +110,7 @@ public class PoolService implements IPoolService {
                     dto.setEmpresaId(pool.getEmpresa().getId());
                     return dto;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -122,7 +123,7 @@ public class PoolService implements IPoolService {
     @Transactional(readOnly = true)
     public Pool obtenerPoolEntity(Long id) {
         return poolRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Pool no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(POOL_NOT_FOUND));
     }
 
     private void validarUsuarioAdministradorDeEmpresa(Long usuarioId, Long empresaId) {

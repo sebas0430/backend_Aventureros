@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -144,7 +144,7 @@ public class ArcoService implements IArcoService {
                     dto.setDestinoTipo(a.getDestinoTipo().name());
                     return dto;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

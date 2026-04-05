@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 @Slf4j
 @Service
@@ -111,7 +111,7 @@ public class LaneService implements ILaneService {
                     dto.setPoolId(lane.getPool().getId());
                     return dto;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private void validarAccesoYManejoDeLane(Long usuarioId, Long empresaPoolId, boolean requiresAdmin) {

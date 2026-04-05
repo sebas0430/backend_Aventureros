@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 @Slf4j
 @Service
@@ -82,7 +82,7 @@ public class EventoMensajeService implements IEventoMensajeService {
                     dto.setProcesoId(e.getProceso().getId());
                     return dto;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -166,7 +166,7 @@ public class EventoMensajeService implements IEventoMensajeService {
 
         return ejecucionesGuardadas.stream()
                 .map(this::toEjecucionDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -175,7 +175,7 @@ public class EventoMensajeService implements IEventoMensajeService {
         return mensajeEjecucionRepository.findByEventoOrigenId(eventoOrigenId)
                 .stream()
                 .map(this::toEjecucionDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // ===================== Helpers =====================

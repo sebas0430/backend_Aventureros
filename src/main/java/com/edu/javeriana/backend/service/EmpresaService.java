@@ -19,12 +19,14 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 
 @Slf4j
 @Service
 public class EmpresaService implements IEmpresaService {
+
+    private static final String EMPRESA_NOT_FOUND = "Empresa no encontrada";
 
     private final EmpresaRepository empresaRepository;
     private final IUsuarioService usuarioService;
@@ -89,7 +91,7 @@ public class EmpresaService implements IEmpresaService {
     @Transactional
     public EmpresaEdicionDTO editarEmpresa(Long id, EmpresaEdicionDTO dto) {
         Empresa empresa = empresaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException(EMPRESA_NOT_FOUND));
 
         // Si cambió el NIT, verificamos que no colisione
         if (!empresa.getNit().equals(dto.getNit()) && empresaRepository.findByNit(dto.getNit()).isPresent()) {
@@ -108,7 +110,7 @@ public class EmpresaService implements IEmpresaService {
     @Transactional(readOnly = true)
     public EmpresaRegistroDTO obtenerEmpresa(Long id) {
         Empresa empresa = empresaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException(EMPRESA_NOT_FOUND));
 
         EmpresaRegistroDTO dto = modelMapper.map(empresa, EmpresaRegistroDTO.class);
         dto.setPasswordAdmin(null); // No exponer el password
@@ -119,7 +121,7 @@ public class EmpresaService implements IEmpresaService {
     @Transactional(readOnly = true)
     public Empresa obtenerEmpresaEntity(Long id) {
         return empresaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException(EMPRESA_NOT_FOUND));
     }
 
     @Override
@@ -138,14 +140,14 @@ public List<EmpresaRegistroDTO> listarEmpresas() {
                 dto.setPasswordAdmin(null);
                 return dto;
             })
-            .collect(Collectors.toList());
+            .toList();
 }
 
     @Override
 @Transactional
 public void eliminarEmpresa(Long id) {
     Empresa empresa = empresaRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada"));
+            .orElseThrow(() -> new ResourceNotFoundException(EMPRESA_NOT_FOUND));
     empresaRepository.delete(empresa);
 }
 }

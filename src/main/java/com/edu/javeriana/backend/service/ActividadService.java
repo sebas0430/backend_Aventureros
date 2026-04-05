@@ -17,11 +17,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 @Slf4j
 @Service
 public class ActividadService implements IActividadService {
+
+    private static final String MSG_ACTIVIDAD_NO_ENCONTRADA = "Actividad no encontrada";
+    private static final String SEPARADOR_CAMBIO = "' a '";
 
     private final ActividadRepository actividadRepository;
     private final IProcesoService procesoService;
@@ -30,15 +33,15 @@ public class ActividadService implements IActividadService {
     private final ModelMapper modelMapper;
 
     public ActividadService(ActividadRepository actividadRepository,
-                            @Lazy IProcesoService procesoService,
-                            @Lazy IUsuarioService usuarioService,
-                            @Lazy IHistorialProcesoService historialProcesoService,
-                            ModelMapper modelMapper) {
-        this.actividadRepository        = actividadRepository;
-        this.procesoService             = procesoService;
-        this.usuarioService             = usuarioService;
-        this.historialProcesoService    = historialProcesoService;
-        this.modelMapper                = modelMapper;
+            @Lazy IProcesoService procesoService,
+            @Lazy IUsuarioService usuarioService,
+            @Lazy IHistorialProcesoService historialProcesoService,
+            ModelMapper modelMapper) {
+        this.actividadRepository = actividadRepository;
+        this.procesoService = procesoService;
+        this.usuarioService = usuarioService;
+        this.historialProcesoService = historialProcesoService;
+        this.modelMapper = modelMapper;
     }
 
     // ─────────────────────────────────────────────
@@ -73,7 +76,9 @@ public class ActividadService implements IActividadService {
         actividad = actividadRepository.save(actividad);
         log.info("Actividad {} creada exitosamente en proceso {}", actividad.getId(), proceso.getId());
 
-        historialProcesoService.registrarAccion(proceso, usuario, "CREACION_ACTIVIDAD", "Se agregó la actividad '" + actividad.getNombre() + "' de tipo '" + actividad.getTipoActividad() + "' con rol responsable '" + actividad.getRolResponsable() + "'.");
+        historialProcesoService.registrarAccion(proceso, usuario, "CREACION_ACTIVIDAD",
+                "Se agregó la actividad '" + actividad.getNombre() + "' de tipo '" + actividad.getTipoActividad()
+                        + "' con rol responsable '" + actividad.getRolResponsable() + "'.");
 
         // Mapear entidad → DTO existente
         ActividadRegistroDTO response = modelMapper.map(actividad, ActividadRegistroDTO.class);
@@ -89,7 +94,7 @@ public class ActividadService implements IActividadService {
     public ActividadEdicionDTO editarActividad(Long actividadId, ActividadEdicionDTO dto) {
 
         Actividad actividad = actividadRepository.findById(actividadId)
-                .orElseThrow(() -> new ResourceNotFoundException("Actividad no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException(MSG_ACTIVIDAD_NO_ENCONTRADA));
 
         Usuario usuario = usuarioService.obtenerUsuarioEntity(dto.getUsuarioId());
 
@@ -105,12 +110,12 @@ public class ActividadService implements IActividadService {
 
         if (!actividad.getNombre().equals(dto.getNombre())) {
             cambios.append("Nombre cambiado de '").append(actividad.getNombre())
-                    .append("' a '").append(dto.getNombre()).append("'. ");
+                    .append(SEPARADOR_CAMBIO).append(dto.getNombre()).append("'. ");
             actividad.setNombre(dto.getNombre());
         }
         if (!actividad.getTipoActividad().equals(dto.getTipoActividad())) {
             cambios.append("Tipo cambiado de '").append(actividad.getTipoActividad())
-                    .append("' a '").append(dto.getTipoActividad()).append("'. ");
+                    .append(SEPARADOR_CAMBIO).append(dto.getTipoActividad()).append("'. ");
             actividad.setTipoActividad(dto.getTipoActividad());
         }
         if (!actividad.getDescripcion().equals(dto.getDescripcion())) {
@@ -119,7 +124,7 @@ public class ActividadService implements IActividadService {
         }
         if (!actividad.getRolResponsable().equals(dto.getRolResponsable())) {
             cambios.append("Rol responsable cambiado de '").append(actividad.getRolResponsable())
-                    .append("' a '").append(dto.getRolResponsable()).append("'. ");
+                    .append(SEPARADOR_CAMBIO).append(dto.getRolResponsable()).append("'. ");
             actividad.setRolResponsable(dto.getRolResponsable());
         }
         if (dto.getOrden() != null && !dto.getOrden().equals(actividad.getOrden())) {
@@ -132,7 +137,8 @@ public class ActividadService implements IActividadService {
             actividad = actividadRepository.save(actividad);
             log.info("Actividad {} editada exitosamente", actividadId);
 
-            historialProcesoService.registrarAccion(actividad.getProceso(), usuario, "EDICION_ACTIVIDAD", "Actividad '" + actividad.getNombre() + "': " + cambios.toString().trim());
+            historialProcesoService.registrarAccion(actividad.getProceso(), usuario, "EDICION_ACTIVIDAD",
+                    "Actividad '" + actividad.getNombre() + "': " + cambios.toString().trim());
         }
 
         // Mapear entidad → DTO existente
@@ -147,7 +153,7 @@ public class ActividadService implements IActividadService {
     public void eliminarActividad(Long actividadId, Long usuarioId) {
 
         Actividad actividad = actividadRepository.findById(actividadId)
-                .orElseThrow(() -> new ResourceNotFoundException("Actividad no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException(MSG_ACTIVIDAD_NO_ENCONTRADA));
 
         Usuario usuario = usuarioService.obtenerUsuarioEntity(usuarioId);
 
@@ -167,7 +173,8 @@ public class ActividadService implements IActividadService {
         }
         actividadRepository.saveAll(actividadesActivas);
 
-        historialProcesoService.registrarAccion(actividad.getProceso(), usuario, "ELIMINACION_ACTIVIDAD", "La actividad '" + actividad.getNombre() + "' fue eliminada. El flujo del proceso fue reajustado.");
+        historialProcesoService.registrarAccion(actividad.getProceso(), usuario, "ELIMINACION_ACTIVIDAD",
+                "La actividad '" + actividad.getNombre() + "' fue eliminada. El flujo del proceso fue reajustado.");
     }
 
     // ─────────────────────────────────────────────
@@ -183,14 +190,14 @@ public class ActividadService implements IActividadService {
                     dto.setProcesoId(a.getProceso().getId());
                     return dto;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional(readOnly = true)
     @Override
     public ActividadRegistroDTO obtenerPorId(Long actividadId) {
         Actividad actividad = actividadRepository.findById(actividadId)
-                .orElseThrow(() -> new ResourceNotFoundException("Actividad no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException(MSG_ACTIVIDAD_NO_ENCONTRADA));
 
         ActividadRegistroDTO response = modelMapper.map(actividad, ActividadRegistroDTO.class);
         response.setProcesoId(actividad.getProceso().getId());

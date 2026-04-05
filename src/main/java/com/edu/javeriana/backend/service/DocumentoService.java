@@ -3,6 +3,7 @@ package com.edu.javeriana.backend.service;
 import com.edu.javeriana.backend.service.interfaces.IDocumentoService;
 import com.edu.javeriana.backend.dto.DocumentoDTO;
 import com.edu.javeriana.backend.exception.ResourceNotFoundException;
+import com.edu.javeriana.backend.exception.FileOperationException;
 import com.edu.javeriana.backend.model.Documento;
 import com.edu.javeriana.backend.model.Proceso;
 import com.edu.javeriana.backend.repository.DocumentoRepository;
@@ -20,7 +21,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
+
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -85,7 +86,7 @@ public class DocumentoService implements IDocumentoService {
 
         } catch (IOException e) {
             log.error("Error al guardar el archivo: {}", e.getMessage(), e);
-            throw new RuntimeException("Error al guardar el archivo", e);
+            throw new FileOperationException("Error al guardar el archivo", e);
         }
     }
 
@@ -102,7 +103,7 @@ public class DocumentoService implements IDocumentoService {
                     dto.setProcesoId(d.getProceso().getId());
                     return dto;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -118,7 +119,7 @@ public class DocumentoService implements IDocumentoService {
             log.info("Documento {} eliminado exitosamente", documentoId);
         } catch (IOException e) {
             log.error("Error al eliminar el archivo físico: {}", e.getMessage(), e);
-            throw new RuntimeException("Error al eliminar el archivo físico", e);
+            throw new FileOperationException("Error al eliminar el archivo físico", e);
         }
     }
 
@@ -164,7 +165,7 @@ public DocumentoDTO actualizarDocumento(Long documentoId, MultipartFile archivo)
 
     } catch (IOException e) {
         log.error("Error al actualizar el archivo: {}", e.getMessage(), e);
-        throw new RuntimeException("Error al actualizar el archivo", e);
+        throw new FileOperationException("Error al actualizar el archivo", e);
     }
 }
 }

@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 @Slf4j
 @Service
@@ -125,7 +125,7 @@ public class NotificacionExternaService implements INotificacionExternaService {
                     dto.setEmpresaId(c.getEmpresa().getId());
                     return dto;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // ===================== Envío de Mensajes =====================
@@ -196,7 +196,7 @@ public class NotificacionExternaService implements INotificacionExternaService {
         return notificacionExternaRepository.findByProcesoId(procesoId)
                 .stream()
                 .map(this::toNotificacionDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -205,7 +205,7 @@ public class NotificacionExternaService implements INotificacionExternaService {
         return notificacionExternaRepository.findByConectorId(conectorId)
                 .stream()
                 .map(this::toNotificacionDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // ===================== Adaptadores =====================

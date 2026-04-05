@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 @Slf4j
 @Service
@@ -47,106 +47,119 @@ public class MessageCatchService implements IMessageCatchService {
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa destino no encontrada"));
 
         String payloadSanitizado = sanitizarPayload(dto.getPayload());
+        boolean credencialValidada = validarSeguridad(dto, empresa.getId());
 
-        boolean credencialValidada;
-        if ("EXTERNO".equalsIgnoreCase(dto.getFuente())) {
-            credencialValidada = validarCredencialExterna(dto.getTokenSeguridad(), empresa.getId());
-            if (!credencialValidada) {
-                log.warn("SEGURIDAD: Intento de Message Catch RECHAZADO. Emisor='{}', Mensaje='{}', Empresa={}. Token inválido.",
-                        dto.getIdentificadorEmisor(), dto.getNombreMensaje(), empresa.getId());
-                throw new BusinessRuleException(
-                        "Credencial/token de seguridad inválido. El mensaje externo ha sido rechazado. Emisor: " + dto.getIdentificadorEmisor());
-            }
-        } else {
-            credencialValidada = true;
-        }
-
-        List<EventoMensaje> catchesActivos;
-        if (dto.getCorrelationKey() != null && !dto.getCorrelationKey().isBlank()) {
-            catchesActivos = eventoMensajeRepository.findActiveCatchesByNombreAndCorrelationAndEmpresa(
-                    dto.getNombreMensaje(), dto.getCorrelationKey(), empresa.getId());
-        } else {
-            catchesActivos = eventoMensajeRepository.findActiveCatchesByNombreAndEmpresa(
-                    dto.getNombreMensaje(), empresa.getId());
-        }
-
+        List<EventoMensaje> catchesActivos = buscarCatchesActivos(dto, empresa.getId());
         if (catchesActivos.isEmpty()) {
             throw new BusinessRuleException("No hay procesos con un CATCH activo esperando el mensaje '" + dto.getNombreMensaje() + "'.");
         }
 
         List<RecepcionMensaje> recepciones = new ArrayList<>();
-
         for (EventoMensaje catchEvento : catchesActivos) {
             String variablesMapeadas = mapearVariables(payloadSanitizado, catchEvento.getPayloadSchema());
-
-            List<InstanciaProceso> instanciasActivas;
-            if (dto.getCorrelationKey() != null && catchEvento.getTipoCorrelacion() == ReglaCorrelacion.BUSINESS_KEY) {
-                instanciasActivas = instanciaProcesoRepository.findByBusinessKeyAndProcesoIdAndEstado(
-                        dto.getCorrelationKey(), catchEvento.getProceso().getId(), EstadoInstancia.ACTIVA);
-            } else {
-                instanciasActivas = instanciaProcesoRepository.findByProcesoIdAndEstado(
-                        catchEvento.getProceso().getId(), EstadoInstancia.ACTIVA);
-            }
-
-            List<InstanciaProceso> destinos = new ArrayList<>();
-
-            if (instanciasActivas.isEmpty()) {
-                if (catchEvento.isCrearInstanciaSiFalla()) {
-                    InstanciaProceso nuevaInstancia = InstanciaProceso.builder()
-                            .proceso(catchEvento.getProceso()).businessKey(dto.getCorrelationKey())
-                            .estado(EstadoInstancia.ACTIVA).variables(variablesMapeadas).build();
-                    destinos.add(instanciaProcesoRepository.save(nuevaInstancia));
-                } else {
-                    continue;
-                }
-            } else if (instanciasActivas.size() == 1) {
-                destinos.add(instanciasActivas.get(0));
-            } else {
-                PoliticaMultiplesCoincidencias politica = catchEvento.getPoliticaMultiples() != null
-                        ? catchEvento.getPoliticaMultiples() : PoliticaMultiplesCoincidencias.ERROR;
-                switch (politica) {
-                    case ENTREGAR_A_PRIMERA    -> destinos.add(instanciasActivas.get(0));
-                    case ENTREGAR_A_TODAS      -> destinos.addAll(instanciasActivas);
-                    case CREAR_NUEVA_INSTANCIA -> {
-                        InstanciaProceso nueva = InstanciaProceso.builder()
-                                .proceso(catchEvento.getProceso()).businessKey(dto.getCorrelationKey())
-                                .estado(EstadoInstancia.ACTIVA).variables(variablesMapeadas).build();
-                        destinos.add(instanciaProcesoRepository.save(nueva));
-                    }
-                    case ERROR -> throw new BusinessRuleException(
-                            "Múltiples instancias activas y la política indica ERROR para el proceso " + catchEvento.getProceso().getId());
-                }
-            }
-
-            for (InstanciaProceso in : destinos) {
-                if (in.getId() != null) {
-                    in.setVariables(variablesMapeadas);
-                    instanciaProcesoRepository.save(in);
-                }
-                String accion = (in.getId() != null && !catchEvento.isCrearInstanciaSiFalla() && !instanciasActivas.isEmpty())
-                        ? "CONTINUAR_INSTANCIA_ID_" + in.getId()
-                        : "ACTIVAR_NUEVA_INSTANCIA_ID_" + in.getId();
-
-                RecepcionMensaje recepcion = RecepcionMensaje.builder()
-                        .eventoCatch(catchEvento).fuenteMensaje(dto.getFuente().toUpperCase())
-                        .identificadorEmisor(dto.getIdentificadorEmisor()).payloadRecibido(payloadSanitizado)
-                        .variablesMapeadas(variablesMapeadas).correlationKeyUsada(dto.getCorrelationKey())
-                        .credencialValidada(credencialValidada).accionTomada(accion)
-                        .detalle("Entregado a Instancia " + in.getId() + " del Proceso " + catchEvento.getProceso().getId())
-                        .build();
-                recepciones.add(recepcionMensajeRepository.save(recepcion));
-
-                log.info("AUDITORIA (MESSAGE CATCH): Instancia {} recibió mensaje '{}' desde {}. Acción: {}",
-                        in.getId(), dto.getNombreMensaje(), dto.getFuente(), accion);
-            }
+            List<InstanciaProceso> destinos = determinarInstanciasDestino(catchEvento, dto, variablesMapeadas);
+            recepciones.addAll(procesarEntregaMensaje(catchEvento, destinos, dto, payloadSanitizado, variablesMapeadas, credencialValidada));
         }
 
         return recepciones.stream()
-                .map(r -> {
-                    MensajeCatchDTO response = modelMapper.map(dto, MensajeCatchDTO.class);
-                    return response;
-                })
-                .collect(Collectors.toList());
+                .map(r -> modelMapper.map(dto, MensajeCatchDTO.class))
+                .toList();
+    }
+
+    private boolean validarSeguridad(MensajeCatchDTO dto, Long empresaId) {
+        if (!"EXTERNO".equalsIgnoreCase(dto.getFuente())) {
+            return true;
+        }
+        boolean credencialValidada = validarCredencialExterna(dto.getTokenSeguridad(), empresaId);
+        if (!credencialValidada) {
+            log.warn("SEGURIDAD: Intento de Message Catch RECHAZADO. Emisor='{}', Mensaje='{}', Empresa={}. Token inválido.",
+                    dto.getIdentificadorEmisor(), dto.getNombreMensaje(), empresaId);
+            throw new BusinessRuleException(
+                    "Credencial/token de seguridad inválido. El mensaje externo ha sido rechazado. Emisor: " + dto.getIdentificadorEmisor());
+        }
+        return true;
+    }
+
+    private List<EventoMensaje> buscarCatchesActivos(MensajeCatchDTO dto, Long empresaId) {
+        if (dto.getCorrelationKey() != null && !dto.getCorrelationKey().isBlank()) {
+            return eventoMensajeRepository.findActiveCatchesByNombreAndCorrelationAndEmpresa(
+                    dto.getNombreMensaje(), dto.getCorrelationKey(), empresaId);
+        }
+        return eventoMensajeRepository.findActiveCatchesByNombreAndEmpresa(
+                dto.getNombreMensaje(), empresaId);
+    }
+
+    private List<InstanciaProceso> determinarInstanciasDestino(EventoMensaje catchEvento, MensajeCatchDTO dto, String variablesMapeadas) {
+        List<InstanciaProceso> instanciasActivas;
+        if (dto.getCorrelationKey() != null && catchEvento.getTipoCorrelacion() == ReglaCorrelacion.BUSINESS_KEY) {
+            instanciasActivas = instanciaProcesoRepository.findByBusinessKeyAndProcesoIdAndEstado(
+                    dto.getCorrelationKey(), catchEvento.getProceso().getId(), EstadoInstancia.ACTIVA);
+        } else {
+            instanciasActivas = instanciaProcesoRepository.findByProcesoIdAndEstado(
+                    catchEvento.getProceso().getId(), EstadoInstancia.ACTIVA);
+        }
+
+        if (instanciasActivas.isEmpty()) {
+            return manejarSinInstanciasActivas(catchEvento, dto, variablesMapeadas);
+        } else if (instanciasActivas.size() == 1) {
+            return List.of(instanciasActivas.get(0));
+        } else {
+            return aplicarPoliticaMultiples(catchEvento, dto, variablesMapeadas, instanciasActivas);
+        }
+    }
+
+    private List<InstanciaProceso> manejarSinInstanciasActivas(EventoMensaje catchEvento, MensajeCatchDTO dto, String variablesMapeadas) {
+        if (catchEvento.isCrearInstanciaSiFalla()) {
+            InstanciaProceso nuevaInstancia = InstanciaProceso.builder()
+                    .proceso(catchEvento.getProceso()).businessKey(dto.getCorrelationKey())
+                    .estado(EstadoInstancia.ACTIVA).variables(variablesMapeadas).build();
+            return List.of(instanciaProcesoRepository.save(nuevaInstancia));
+        }
+        return new ArrayList<>();
+    }
+
+    private List<InstanciaProceso> aplicarPoliticaMultiples(EventoMensaje catchEvento, MensajeCatchDTO dto, String variablesMapeadas, List<InstanciaProceso> instanciasActivas) {
+        PoliticaMultiplesCoincidencias politica = catchEvento.getPoliticaMultiples() != null
+                ? catchEvento.getPoliticaMultiples() : PoliticaMultiplesCoincidencias.ERROR;
+        
+        switch (politica) {
+            case ENTREGAR_A_PRIMERA -> { return List.of(instanciasActivas.get(0)); }
+            case ENTREGAR_A_TODAS -> { return instanciasActivas; }
+            case CREAR_NUEVA_INSTANCIA -> {
+                InstanciaProceso nueva = InstanciaProceso.builder()
+                        .proceso(catchEvento.getProceso()).businessKey(dto.getCorrelationKey())
+                        .estado(EstadoInstancia.ACTIVA).variables(variablesMapeadas).build();
+                return List.of(instanciaProcesoRepository.save(nueva));
+            }
+            default -> throw new BusinessRuleException(
+                    "Múltiples instancias activas y la política indica ERROR para el proceso " + catchEvento.getProceso().getId());
+        }
+    }
+
+    private List<RecepcionMensaje> procesarEntregaMensaje(EventoMensaje catchEvento, List<InstanciaProceso> destinos, MensajeCatchDTO dto, String payloadSanitizado, String variablesMapeadas, boolean credencialValidada) {
+        List<RecepcionMensaje> recepciones = new ArrayList<>();
+        for (InstanciaProceso in : destinos) {
+            if (in.getId() != null) {
+                in.setVariables(variablesMapeadas);
+                instanciaProcesoRepository.save(in);
+            }
+            String accion = (in.getId() != null  && !catchEvento.isCrearInstanciaSiFalla())
+                    ? "CONTINUAR_INSTANCIA_ID_" + in.getId()
+                    : "ACTIVAR_NUEVA_INSTANCIA_ID_" + in.getId();
+
+            RecepcionMensaje recepcion = RecepcionMensaje.builder()
+                    .eventoCatch(catchEvento).fuenteMensaje(dto.getFuente().toUpperCase())
+                    .identificadorEmisor(dto.getIdentificadorEmisor()).payloadRecibido(payloadSanitizado)
+                    .variablesMapeadas(variablesMapeadas).correlationKeyUsada(dto.getCorrelationKey())
+                    .credencialValidada(credencialValidada).accionTomada(accion)
+                    .detalle("Entregado a Instancia " + in.getId() + " del Proceso " + catchEvento.getProceso().getId())
+                    .build();
+            recepciones.add(recepcionMensajeRepository.save(recepcion));
+
+            log.info("AUDITORIA (MESSAGE CATCH): Instancia {} recibió mensaje '{}' desde {}. Acción: {}",
+                    in.getId(), dto.getNombreMensaje(), dto.getFuente(), accion);
+        }
+        return recepciones;
     }
 
     @Override
@@ -164,7 +177,7 @@ public class MessageCatchService implements IMessageCatchService {
                     dto.setEmpresaId(r.getEventoCatch().getProceso().getEmpresa().getId());
                     return dto;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -182,7 +195,7 @@ public class MessageCatchService implements IMessageCatchService {
                     dto.setEmpresaId(r.getEventoCatch().getProceso().getEmpresa().getId());
                     return dto;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private boolean validarCredencialExterna(String token, Long empresaId) {

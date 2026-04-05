@@ -14,13 +14,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
 public class UsuarioService implements IUsuarioService {
+
+    private static final String USUARIO_NOT_FOUND = "Usuario no encontrado";
 
     private final UsuarioRepository usuarioRepository;
     private final IEmpresaService empresaService;
@@ -92,7 +94,7 @@ public class UsuarioService implements IUsuarioService {
     @Transactional(readOnly = true)
     public UsuarioRegistroDTO obtenerUsuario(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
         UsuarioRegistroDTO response = modelMapper.map(usuario, UsuarioRegistroDTO.class);
         response.setCorreo(usuario.getUsername());
@@ -115,14 +117,14 @@ public class UsuarioService implements IUsuarioService {
                     dto.setEmpresaId(u.getEmpresa().getId());
                     return dto;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional
     public UsuarioRegistroDTO actualizarUsuario(Long id, String rol, Boolean activo) {
         Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
         if (rol != null)    usuario.setRol(rol);
         if (activo != null) usuario.setActivo(activo);
@@ -139,7 +141,7 @@ public class UsuarioService implements IUsuarioService {
     @Transactional
     public void eliminarUsuario(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
         usuarioRepository.delete(usuario);
         log.info("Usuario {} eliminado exitosamente", id);
     }
@@ -160,6 +162,6 @@ public class UsuarioService implements IUsuarioService {
     @Transactional(readOnly = true)
     public Usuario obtenerUsuarioEntity(Long id) {
         return usuarioRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
     }
 }

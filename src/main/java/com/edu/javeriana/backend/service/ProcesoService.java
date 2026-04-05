@@ -16,11 +16,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 @Slf4j
 @Service
 public class ProcesoService implements IProcesoService {
+
+    private static final String PROCESO_NOT_FOUND = "Proceso no encontrado";
+    private static final String USUARIO_NOT_FOUND = "Usuario no encontrado";
 
     private final ProcesoRepository procesoRepository;
     private final EmpresaRepository empresaRepository;
@@ -99,7 +102,7 @@ public class ProcesoService implements IProcesoService {
         return procesoRepository.findByEmpresaId(empresaId)
                 .stream()
                 .map(this::toRegistroDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -108,14 +111,14 @@ public class ProcesoService implements IProcesoService {
         return procesoRepository.findByAutorId(autorId)
                 .stream()
                 .map(this::toRegistroDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public ProcesoRegistroDTO obtenerProcesoPorId(Long id) {
         Proceso proceso = procesoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(PROCESO_NOT_FOUND));
         return toRegistroDTO(proceso);
     }
 
@@ -134,14 +137,14 @@ public class ProcesoService implements IProcesoService {
         return procesoRepository.buscarConFiltros(empresaId, estado, categoriaQuery)
                 .stream()
                 .map(this::toRegistroDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional
     public ProcesoEdicionDTO actualizarDefinicion(Long procesoId, String definicionJson) {
         Proceso proceso = procesoRepository.findById(procesoId)
-                .orElseThrow(() -> new IllegalArgumentException("Proceso no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException(PROCESO_NOT_FOUND));
 
         proceso.setDefinicionJson(definicionJson);
         Proceso actualizado = procesoRepository.save(proceso);
@@ -153,12 +156,12 @@ public class ProcesoService implements IProcesoService {
     @Transactional
     public ProcesoEdicionDTO editarProceso(Long id, ProcesoEdicionDTO dto) {
         Proceso proceso = procesoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(PROCESO_NOT_FOUND));
 
         validarPermisoDeRol(dto.getUsuarioId(), proceso.getPool().getId(), "EDITAR");
 
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
         boolean esAutor = proceso.getAutor().getId().equals(usuario.getId());
         boolean esAdmin = "ADMINISTRADOR_EMPRESA".equals(usuario.getRol());
@@ -194,12 +197,12 @@ public class ProcesoService implements IProcesoService {
     @Transactional
     public void eliminarProceso(Long procesoId, Long usuarioId) {
         Proceso proceso = procesoRepository.findById(procesoId)
-                .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(PROCESO_NOT_FOUND));
 
         validarPermisoDeRol(usuarioId, proceso.getPool().getId(), "ELIMINAR");
 
         Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
         if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol()))
             throw new BusinessRuleException("Solo un administrador puede eliminar procesos.");
@@ -214,13 +217,13 @@ public class ProcesoService implements IProcesoService {
     @Transactional
     public ProcesoEdicionDTO cambiarEstado(Long procesoId, EstadoProceso nuevoEstado, Long usuarioId) {
         Proceso proceso = procesoRepository.findById(procesoId)
-                .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(PROCESO_NOT_FOUND));
 
         validarPermisoDeRol(usuarioId, proceso.getPool().getId(),
                 nuevoEstado == EstadoProceso.PUBLICADO ? "PUBLICAR" : "EDITAR");
 
         Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
         if (nuevoEstado == EstadoProceso.PUBLICADO && !"ADMINISTRADOR_EMPRESA".equals(usuario.getRol()))
             throw new BusinessRuleException("Solo un administrador puede publicar procesos.");
@@ -237,10 +240,10 @@ public class ProcesoService implements IProcesoService {
     @Transactional
     public void compartirProceso(Long procesoId, ProcesoCompartirDTO dto) {
         Proceso proceso = procesoRepository.findById(procesoId)
-                .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(PROCESO_NOT_FOUND));
 
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
         if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol()) || !usuario.getEmpresa().getId().equals(proceso.getEmpresa().getId()))
             throw new BusinessRuleException("Solo un administrador global de la empresa dueña puede compartir el proceso");
@@ -261,10 +264,10 @@ public class ProcesoService implements IProcesoService {
     @Transactional
     public void quitarComparticionProceso(Long procesoId, Long poolDestinoId, Long usuarioId) {
         Proceso proceso = procesoRepository.findById(procesoId)
-                .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(PROCESO_NOT_FOUND));
 
         Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
         if (!"ADMINISTRADOR_EMPRESA".equals(usuario.getRol()) || !usuario.getEmpresa().getId().equals(proceso.getEmpresa().getId()))
             throw new BusinessRuleException("Solo un administrador de la empresa dueña puede quitar la compartición");
@@ -281,7 +284,7 @@ public class ProcesoService implements IProcesoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Pool no encontrado"));
 
         Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
         if (!usuario.getEmpresa().getId().equals(pool.getEmpresa().getId()))
             throw new BusinessRuleException("No perteneces a la empresa de este pool");
@@ -289,12 +292,12 @@ public class ProcesoService implements IProcesoService {
         return procesoCompartidoRepository.findByPoolDestinoId(poolId)
                 .stream()
                 .map(c -> toRegistroDTO(c.getProceso()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private void validarPermisoDeRol(Long usuarioId, Long poolId, String accion) {
         Usuario solicitante = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
         if ("ADMINISTRADOR_EMPRESA".equals(solicitante.getRol())) return;
 
@@ -307,6 +310,7 @@ public class ProcesoService implements IProcesoService {
             case "EDITAR"   -> { if (!rol.isPermisoEditarProceso())   throw new BusinessRuleException("Tu rol en este pool no permite EDITAR procesos"); }
             case "ELIMINAR" -> { if (!rol.isPermisoEliminarProceso()) throw new BusinessRuleException("Tu rol en este pool no permite ELIMINAR procesos"); }
             case "PUBLICAR" -> { if (!rol.isPermisoPublicarProceso()) throw new BusinessRuleException("Tu rol en este pool no permite PUBLICAR procesos"); }
+            default -> throw new IllegalArgumentException("Acción no reconocida: " + accion);
         }
     }
 
@@ -314,7 +318,7 @@ public class ProcesoService implements IProcesoService {
     @Transactional(readOnly = true)
     public Proceso obtenerProcesoEntity(Long id) {
         return procesoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Proceso no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(PROCESO_NOT_FOUND));
     }
 
     @Override

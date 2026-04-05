@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+
 
 @Slf4j
 @Service
@@ -149,7 +149,7 @@ public class RolProcesoService implements IRolProcesoService {
                     dto.setEmpresaId(r.getEmpresa().getId());
                     return dto;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -205,7 +205,7 @@ public class RolProcesoService implements IRolProcesoService {
         return rolProcesoRepository.findByEmpresaId(empresaId)
                 .stream()
                 .map(this::construirDetalle)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

@@ -8,8 +8,7 @@ import org.springframework.context.annotation.Configuration;
 public class ModelMapperConfig {
     @Bean
     public ModelMapper modelMapper() {
-        ModelMapper mapper = new ModelMapper();
-        return mapper;
+        return new ModelMapper();
     }
 }
 //moldeo de datos, para mapear objetos de un tipo a otro, por ejemplo de entidad a dto o viceversa, para evitar escribir codigo repetitivo de asignacion de campos.
