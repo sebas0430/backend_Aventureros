@@ -11,7 +11,6 @@ import com.edu.javeriana.backend.model.RolPool;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.AsignacionRolPoolRepository;
 import com.edu.javeriana.backend.repository.RolPoolRepository;
-import com.edu.javeriana.backend.service.interfaces.IEmpresaService;
 import com.edu.javeriana.backend.service.interfaces.IPoolService;
 import com.edu.javeriana.backend.service.interfaces.IUsuarioService;
 import org.springframework.context.annotation.Lazy;
