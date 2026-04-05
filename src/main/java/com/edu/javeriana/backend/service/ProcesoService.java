@@ -309,7 +309,7 @@ public class ProcesoService implements IProcesoService {
         RolPool rol = asignacion.getRol();
         switch (accion) {
             case "CREAR"    -> { if (!rol.isPermisoCrearProceso())    throw new BusinessRuleException("Tu rol en este pool no permite CREAR procesos"); }
-            case "EDITAR"   -> { if (!rol.isPermisoEditarProceso())   throw new BusinessRuleException("Tu rol en este pool no permite EDITAR procesos"); }
+            case EDITAR   -> { if (!rol.isPermisoEditarProceso())   throw new BusinessRuleException("Tu rol en este pool no permite EDITAR procesos"); }
             case "ELIMINAR" -> { if (!rol.isPermisoEliminarProceso()) throw new BusinessRuleException("Tu rol en este pool no permite ELIMINAR procesos"); }
             case "PUBLICAR" -> { if (!rol.isPermisoPublicarProceso()) throw new BusinessRuleException("Tu rol en este pool no permite PUBLICAR procesos"); }
             default -> throw new IllegalArgumentException("Acción no reconocida: " + accion);
