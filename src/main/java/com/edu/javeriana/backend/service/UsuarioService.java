@@ -8,8 +8,9 @@ import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.model.Empresa;
 import com.edu.javeriana.backend.model.Usuario;
 import org.springframework.context.annotation.Lazy;
-import com.edu.javeriana.backend.repository.UsuarioRepository;
 import org.modelmapper.ModelMapper;
+import com.edu.javeriana.backend.repository.UsuarioRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,15 +29,18 @@ public class UsuarioService implements IUsuarioService {
     private final IEmpresaService empresaService;
     private final EmailService emailService;
     private final ModelMapper modelMapper;
+    private final PasswordEncoder passwordEncoder;
 
     public UsuarioService(UsuarioRepository usuarioRepository,
                           @Lazy IEmpresaService empresaService,
                           EmailService emailService,
-                          ModelMapper modelMapper) {
+                          ModelMapper modelMapper,
+                          PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
         this.empresaService    = empresaService;
         this.emailService      = emailService;
         this.modelMapper       = modelMapper;
+        this.passwordEncoder   = passwordEncoder;
     }
 
     @Override
@@ -50,7 +54,7 @@ public class UsuarioService implements IUsuarioService {
 
         Usuario usuario = new Usuario();
         usuario.setUsername(correo);
-        usuario.setPasswordHash(password);
+        usuario.setPasswordHash(passwordEncoder.encode(password)); // Ciframos aquí!
         usuario.setRol(rol);
         usuario.setEmpresa(empresa);
         usuario.setActivo(true);
@@ -73,7 +77,7 @@ public class UsuarioService implements IUsuarioService {
         Usuario usuario = usuarioRepository.findByUsername(correo)
                 .orElseThrow(() -> new IllegalArgumentException("Credenciales inválidas"));
 
-        if (!usuario.getPasswordHash().equals(password)) {
+        if (!passwordEncoder.matches(password, usuario.getPasswordHash())) { // Comparamos el cifrado aquí!
             throw new IllegalArgumentException("Credenciales inválidas");
         }
 
