@@ -24,8 +24,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-public class ArcoService implements IArcoService {
 
+public class ArcoService implements IArcoService {
+    private static final String ARCO_NO_ENCONTRADO = "Arco no encontrado";
     private final ArcoRepository arcoRepository;
     private final IProcesoService procesoService;
     private final IUsuarioService usuarioService;
@@ -89,7 +90,7 @@ public class ArcoService implements IArcoService {
     public ArcoEdicionDTO editarArco(Long id, ArcoEdicionDTO dto) {
 
         Arco arco = arcoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Arco no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(ARCO_NO_ENCONTRADO));
 
         validarUsuarioAutorizado(arco.getProceso(), dto.getUsuarioId());
 
@@ -151,7 +152,7 @@ public class ArcoService implements IArcoService {
     @Transactional(readOnly = true)
     public ArcoRegistroDTO obtenerArcoPorId(Long id) {
         Arco arco = arcoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Arco no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(ARCO_NO_ENCONTRADO));
 
         ArcoRegistroDTO response = modelMapper.map(arco, ArcoRegistroDTO.class);
         response.setProcesoId(arco.getProceso().getId());
@@ -165,7 +166,7 @@ public class ArcoService implements IArcoService {
     public void eliminarArco(Long id, Long usuarioId) {
         validarUsuarioAdministrador(usuarioId);
         Arco arco = arcoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Arco no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(ARCO_NO_ENCONTRADO));
         arcoRepository.delete(arco);
         log.info("Arco {} eliminado exitosamente por el usuario {}", id, usuarioId);
     }
