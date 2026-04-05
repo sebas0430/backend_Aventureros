@@ -34,7 +34,7 @@ public class DocumentoService implements IDocumentoService {
     private final ModelMapper modelMapper;
 
     // Directorio donde se guardarán los archivos localmente (simulado local file system)
-    private final String UPLOAD_DIR = "uploads/";
+    private static final String UPLOAD_DIR = "uploads/";
 
     public DocumentoService(DocumentoRepository documentoRepository,
                             @Lazy IProcesoService procesoService,
