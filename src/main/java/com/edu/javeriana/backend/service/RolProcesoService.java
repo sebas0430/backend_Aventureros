@@ -124,7 +124,7 @@ public class RolProcesoService implements IRolProcesoService {
         RolProceso actualizado = rolProcesoRepository.save(rol);
         log.info("AUDITORIA: Usuario {} (ADMIN) editó el Rol de Proceso ID={} — {}",
                 solicitante.getId(), actualizado.getId(),
-                cambios.length() > 0 ? cambios.toString().trim() : "Sin cambios detectados");
+                cambios.isEmpty() ? "Sin cambios detectados" : cambios.toString().trim());
 
         RolProcesoEdicionDTO response = modelMapper.map(actualizado, RolProcesoEdicionDTO.class);
         response.setUsuarioId(dto.getUsuarioId());

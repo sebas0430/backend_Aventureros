@@ -183,7 +183,7 @@ public class ProcesoService implements IProcesoService {
             proceso.setCategoria(dto.getCategoria());
         }
 
-        if (cambios.length() > 0) {
+        if (cambios.isEmpty()) {
             proceso = procesoRepository.save(proceso);
             historialProcesoService.registrarAccion(proceso, usuario, "EDICION", cambios.toString().trim());
         }
