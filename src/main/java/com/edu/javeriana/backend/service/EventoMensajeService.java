@@ -104,15 +104,18 @@ public class EventoMensajeService implements IEventoMensajeService {
     @Override
     @Transactional
     public List<MensajeEjecucionDTO> lanzarMensaje(MensajeLanzarDTO dto) {
+        // Buscamos cuál es el evento de tipo "Lanzador" (THROW).
         EventoMensaje origen = eventoMensajeRepository.findById(dto.getEventoOrigenId())
                 .orElseThrow(() -> new ResourceNotFoundException("Evento de origen no encontrado"));
 
         Usuario usuario = usuarioService.obtenerUsuarioEntity(dto.getUsuarioId());
 
+        // Validamos que el evento realmente esté hecho para disparar señales.
         if (origen.getTipo() != TipoEventoMensaje.THROW) {
             throw new BusinessRuleException("El evento de origen debe ser de tipo THROW para poder lanzarlo.");
         }
 
+        // Buscamos a ver quién está esperando este mensaje (CATCH) y que el proceso esté publicado.
         List<EventoMensaje> destinosPosibles = eventoMensajeRepository
                 .findByNombreMensajeAndTipoAndEmpresaIdAndEstado(
                         origen.getNombreMensaje(),
@@ -123,6 +126,7 @@ public class EventoMensajeService implements IEventoMensajeService {
 
         List<MensajeEjecucion> ejecucionesGuardadas = new ArrayList<>();
 
+        // Si nadie está escuchando, revisamos qué hacer según el "Fallback" (Plan B).
         if (destinosPosibles.isEmpty()) {
             ComportamientoFallback comportamiento = origen.getFallback();
             if (comportamiento == null) comportamiento = ComportamientoFallback.ERROR;
@@ -135,6 +139,7 @@ public class EventoMensajeService implements IEventoMensajeService {
                         "No se encontró ningún receptor (Catch) para este mensaje y la configuración indica abortar por ERROR.");
             }
 
+            // Si el plan B es simplemente ignorar o avisar, lo anotamos como error sin receptor.
             MensajeEjecucion fallaLog = MensajeEjecucion.builder()
                     .eventoOrigen(origen)
                     .eventoDestino(null)
@@ -148,6 +153,7 @@ public class EventoMensajeService implements IEventoMensajeService {
             return List.of(toEjecucionDTO(mensajeEjecucionRepository.save(fallaLog)));
         }
 
+        // Si hay gente escuchando, les mandamos la señal a todos ellos.
         for (EventoMensaje destino : destinosPosibles) {
             MensajeEjecucion ejecucion = MensajeEjecucion.builder()
                     .eventoOrigen(origen)

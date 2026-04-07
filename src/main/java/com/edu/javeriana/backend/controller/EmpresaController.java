@@ -20,12 +20,14 @@ public class EmpresaController {
 
     private final IEmpresaService empresaService;
 
+    // Mete una empresa nueva al sistema.
     @PostMapping
     public ResponseEntity<EmpresaRegistroDTO> registrarEmpresa(@Valid @RequestBody EmpresaRegistroDTO dto) {
         EmpresaRegistroDTO response = empresaService.registrarEmpresa(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    // Cambia la info de la empresa (dirección, nombre, etc.).
     @PutMapping("/{id}")
     public ResponseEntity<EmpresaEdicionDTO> editarEmpresa(
             @PathVariable Long id,
@@ -34,16 +36,19 @@ public class EmpresaController {
         return ResponseEntity.ok(response);
     }
 
+    // Trae los datos de una sola empresa.
     @GetMapping("/{id}")
     public ResponseEntity<EmpresaRegistroDTO> obtenerEmpresa(@PathVariable Long id) {
         return ResponseEntity.ok(empresaService.obtenerEmpresa(id));
     }
 
+    // Saca la lista de todas las empresas que hay registradas.
     @GetMapping
     public ResponseEntity<List<EmpresaRegistroDTO>> listarEmpresas() {
         return ResponseEntity.ok(empresaService.listarEmpresas());
     }
 
+    // Borra una empresa (cuidado, que se va todo lo de esa empresa).
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, String>> eliminarEmpresa(@PathVariable Long id) {
         empresaService.eliminarEmpresa(id);

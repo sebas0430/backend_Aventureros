@@ -46,17 +46,22 @@ public class ArcoService implements IArcoService {
     @Transactional
     public ArcoRegistroDTO crearArco(ArcoRegistroDTO dto) {
 
+        // Buscamos el proceso donde se está dibujando esta conexión.
         Proceso proceso = procesoService.obtenerProcesoEntity(dto.getProcesoId());
 
+        // Validamos que el usuario tenga permiso de mover las flechas.
         validarUsuarioAutorizado(proceso, dto.getUsuarioId());
 
+        // Convertimos los tipos de nodo (ej. de "S" a "GATEWAY") para que la base entienda.
         TipoNodo origenTipo  = parseTipoNodo(dto.getOrigenTipo());
         TipoNodo destinoTipo = parseTipoNodo(dto.getDestinoTipo());
 
+        // Evitamos que alguien conecte un nodo consigo mismo (bucle infinito).
         if (dto.getOrigenId().equals(dto.getDestinoId()) && origenTipo == destinoTipo) {
             throw new BusinessRuleException("El nodo de origen y destino no pueden ser el mismo");
         }
 
+        // Checamos que no exista ya esa misma flecha para no duplicar datos.
         boolean existeArco = arcoRepository.existsByProcesoIdAndOrigenIdAndOrigenTipoAndDestinoIdAndDestinoTipo(
                 dto.getProcesoId(), dto.getOrigenId(), origenTipo, dto.getDestinoId(), destinoTipo);
 
@@ -64,6 +69,7 @@ public class ArcoService implements IArcoService {
             throw new BusinessRuleException("Ya existe un arco entre estos dos nodos en el proceso");
         }
 
+        // Creamos la conexión con sus puntos de anclaje (para que el dibujo no se vea feo).
         Arco arco = Arco.builder()
                 .proceso(proceso)
                 .origenId(dto.getOrigenId())
@@ -73,11 +79,12 @@ public class ArcoService implements IArcoService {
                 .etiqueta(dto.getEtiqueta())
                 .build();
 
+        // Guardamos todo y avisamos por consola.
         Arco guardado = arcoRepository.save(arco);
         
         log.info("Arco {} creado exitosamente en proceso {}", guardado.getId(), proceso.getId());
 
-        // Mapear entidad → DTO existente
+        // Devolvemos los datos mapeados para que el frente los pinte.
         ArcoRegistroDTO response = modelMapper.map(guardado, ArcoRegistroDTO.class);
         response.setProcesoId(guardado.getProceso().getId());
         response.setOrigenTipo(guardado.getOrigenTipo().name());

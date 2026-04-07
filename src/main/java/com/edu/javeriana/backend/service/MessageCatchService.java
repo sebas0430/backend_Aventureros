@@ -43,21 +43,31 @@ public class MessageCatchService implements IMessageCatchService {
     @Override
     @Transactional
     public List<MensajeCatchDTO> recibirMensaje(MensajeCatchDTO dto) {
+        // Buscamos la empresa que debe recibir el mensaje del mundo exterior.
         Empresa empresa = empresaRepository.findById(dto.getEmpresaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa destino no encontrada"));
 
+        // Limpiamos el mensaje de posibles ataques (scripts maliciosos).
         String payloadSanitizado = sanitizarPayload(dto.getPayload());
+        
+        // Si viene de afuera, checamos que tenga el token de seguridad correcto.
         boolean credencialValidada = validarSeguridad(dto, empresa.getId());
 
+        // Buscamos procesos que estén "oreja" esperando este mensaje (CATCH).
         List<EventoMensaje> catchesActivos = buscarCatchesActivos(dto, empresa.getId());
         if (catchesActivos.isEmpty()) {
             throw new BusinessRuleException("No hay procesos con un CATCH activo esperando el mensaje '" + dto.getNombreMensaje() + "'.");
         }
 
         List<RecepcionMensaje> recepciones = new ArrayList<>();
+        // Por cada proceso "oreja", le entregamos el mensaje.
         for (EventoMensaje catchEvento : catchesActivos) {
             String variablesMapeadas = mapearVariables(payloadSanitizado, catchEvento.getPayloadSchema());
+            
+            // Decidimos a qué instancia (caso de negocio) le toca recibirlo.
             List<InstanciaProceso> destinos = determinarInstanciasDestino(catchEvento, dto, variablesMapeadas);
+            
+            // Procesamos la entrega final.
             recepciones.addAll(procesarEntregaMensaje(catchEvento, destinos, dto, payloadSanitizado, variablesMapeadas, credencialValidada));
         }
 

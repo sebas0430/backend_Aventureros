@@ -19,12 +19,14 @@ public class EmailService {
 
     public void enviarInvitacion(String destinatario, String passwordTemporal, String empresaNombre, String rol) {
         try {
+            // Preparamos el mensaje de correo.
             SimpleMailMessage mensaje = new SimpleMailMessage();
             mensaje.setFrom(fromEmail); 
 
             mensaje.setTo(destinatario);
             mensaje.setSubject("Has sido invitado a " + empresaNombre);
             
+            // Redactamos el cuerpo del mensaje para que el nuevo usuario sepa qué hacer.
             String texto = "¡Hola!\n\n"
                          + "Has sido invitado como " + rol + " para colaborar en la documentación de procesos de la empresa " + empresaNombre + ".\n\n"
                          + "Tus credenciales de acceso son las siguientes:\n"
@@ -35,11 +37,13 @@ public class EmailService {
             
             mensaje.setText(texto);
             
+            // Intentamos disparar el correo electrónico.
             log.info("Enviando correo de invitación a: {}", destinatario);
             mailSender.send(mensaje);
             log.info("Correo de invitación enviado exitosamente a: {}", destinatario);
 
         } catch (Exception e) {
+            // Si algo falla, lo anotamos en el log pero no interrumpimos el flujo del sistema.
             log.error("Error al enviar el correo de invitación a {}: {}", destinatario, e.getMessage());
         }
     }

@@ -20,7 +20,7 @@ public class RolProcesoController {
 
     private final IRolProcesoService rolProcesoService;
 
-   
+    // Crea un rol general para ser usado en los procesos de la empresa.
     @PostMapping
     public ResponseEntity<RolProcesoRegistroDTO> crearRolProceso(
             @Valid @RequestBody RolProcesoRegistroDTO dto) {
@@ -29,6 +29,7 @@ public class RolProcesoController {
     }
 
    
+    // Edita un rol de proceso.
     @PutMapping("/{id}")
     public ResponseEntity<RolProcesoEdicionDTO> editarRolProceso(
             @PathVariable Long id,
@@ -37,6 +38,7 @@ public class RolProcesoController {
     }
 
     
+    // Lista todos los roles de proceso que pertenecen a una empresa.
     @GetMapping("/empresa/{empresaId}")
     public ResponseEntity<List<RolProcesoRegistroDTO>> listarRolesPorEmpresa(
             @PathVariable Long empresaId,
@@ -45,12 +47,14 @@ public class RolProcesoController {
     }
 
     
+    // Obtiene un rol de proceso por su ID.
     @GetMapping("/{id}")
     public ResponseEntity<RolProcesoRegistroDTO> obtenerRolProceso(@PathVariable Long id) {
         return ResponseEntity.ok(rolProcesoService.obtenerRolProcesoPorId(id));
     }
 
 
+    // Borra un rol de proceso.
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, String>> eliminarRolProceso(
             @PathVariable Long id,
@@ -60,6 +64,7 @@ public class RolProcesoController {
     }
 
     
+    // Consulta roles con detalle (incluyendo en qué procesos y tareas se usan).
     @GetMapping("/empresa/{empresaId}/detalle")
     public ResponseEntity<List<RolProcesoDetalleDTO>> consultarRolesConDetalle(
             @PathVariable Long empresaId,
@@ -68,6 +73,7 @@ public class RolProcesoController {
     }
 
     
+    // Detalle profundo de un solo rol.
     @GetMapping("/{id}/detalle")
     public ResponseEntity<RolProcesoDetalleDTO> consultarRolProcesoDetalle(@PathVariable Long id) {
         return ResponseEntity.ok(rolProcesoService.consultarRolProcesoDetalle(id));

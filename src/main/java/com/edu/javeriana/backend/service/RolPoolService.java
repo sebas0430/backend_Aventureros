@@ -47,14 +47,18 @@ public class RolPoolService implements IRolPoolService {
     @Override
     @Transactional
     public RolPoolRegistroDTO crearRol(RolPoolRegistroDTO dto) {
+        // Buscamos el Pool donde vamos a definir estos permisos especiales.
         Pool pool = poolService.obtenerPoolEntity(dto.getPoolId());
 
+        // Validamos que el usuario tenga permiso de gestionar quién hace qué en este pool.
         validarPermisoGestionRoles(dto.getUsuarioId(), pool);
 
+        // No dejamos que le pongan el mismo nombre a dos roles en el mismo pool.
         if (rolPoolRepository.existsByPoolIdAndNombre(pool.getId(), dto.getNombre())) {
             throw new BusinessRuleException("Ya existe un rol con este nombre en este pool");
         }
 
+        // Creamos el Rol de Pool con todos sus interruptores de permisos (Crear, Editar, Borrar, etc.).
         RolPool rol = RolPool.builder()
                 .nombre(dto.getNombre())
                 .descripcion(dto.getDescripcion())
@@ -66,14 +70,12 @@ public class RolPoolService implements IRolPoolService {
                 .permisoGestionarRoles(dto.isPermisoGestionarRoles())
                 .build();
 
+        // Lo guardamos.
         RolPool guardado = rolPoolRepository.save(rol);
         log.info("AUDITORIA: Usuario {} creó un nuevo Rol '{}' en el Pool ID={}",
                 dto.getUsuarioId(), guardado.getNombre(), pool.getId());
 
-        RolPoolRegistroDTO response = modelMapper.map(guardado, RolPoolRegistroDTO.class);
-        response.setPoolId(guardado.getPool().getId());
-        response.setUsuarioId(dto.getUsuarioId());
-        return response;
+        return modelMapper.map(guardado, RolPoolRegistroDTO.class);
     }
 
     @Override

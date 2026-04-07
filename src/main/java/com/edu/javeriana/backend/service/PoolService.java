@@ -44,21 +44,26 @@ public class PoolService implements IPoolService {
     @Override
     @Transactional
     public PoolRegistroDTO crearPool(PoolRegistroDTO dto) {
+        // Buscamos la empresa a la que va a pertenecer este nuevo contenedor (Pool).
         Empresa empresa = empresaService.obtenerEmpresaEntity(dto.getEmpresaId());
 
+        // Checamos que el que lo crea sea el jefe (ADMIN).
         validarUsuarioAdministradorDeEmpresa(dto.getUsuarioId(), empresa.getId());
 
+        // Creamos el Pool, que es como el marco principal donde dibujamos procesos.
         Pool pool = Pool.builder()
                 .nombre(dto.getNombre())
                 .descripcion(dto.getDescripcion())
                 .empresa(empresa)
                 .build();
 
+        // Lo guardamos en la base de datos.
         Pool guardado = poolRepository.save(pool);
 
         log.info("AUDITORIA: Usuario {} (ADMIN) registró el Nuevo Pool '{}' (ID={}) para la Empresa ID={}",
                 dto.getUsuarioId(), guardado.getNombre(), guardado.getId(), empresa.getId());
 
+        // Devolvemos la info mapeada.
         PoolRegistroDTO response = modelMapper.map(guardado, PoolRegistroDTO.class);
         response.setEmpresaId(guardado.getEmpresa().getId());
         response.setUsuarioId(dto.getUsuarioId());

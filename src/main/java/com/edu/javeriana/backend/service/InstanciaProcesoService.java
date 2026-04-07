@@ -34,6 +34,7 @@ public class InstanciaProcesoService implements IInstanciaProcesoService {
     @Override
     @Transactional
     public InstanciaProceso guardarInstancia(InstanciaProceso instancia) {
+        // Guardamos una ejecución real de un proceso (un "caso" de negocio).
         return instanciaProcesoRepository.save(instancia);
     }
 }

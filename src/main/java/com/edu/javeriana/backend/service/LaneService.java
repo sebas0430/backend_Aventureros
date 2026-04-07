@@ -42,21 +42,26 @@ public class LaneService implements ILaneService {
     @Override
     @Transactional
     public LaneRegistroDTO crearLane(LaneRegistroDTO dto) {
+        // Buscamos el Pool (el contenedor grande) donde vamos a meter este carril.
         Pool pool = poolService.obtenerPoolEntity(dto.getPoolId());
 
+        // Solo los administradores pueden crear carriles (áreas o departamentos).
         validarAccesoYManejoDeLane(dto.getUsuarioId(), pool.getEmpresa().getId(), true);
 
+        // Creamos el carril (LANE) que representa una división de responsabilidad.
         Lane lane = Lane.builder()
                 .nombre(dto.getNombre())
                 .descripcion(dto.getDescripcion())
                 .pool(pool)
                 .build();
 
+        // Lo guardamos en la base de datos.
         Lane laneGuardado = laneRepository.save(lane);
 
         log.info("AUDITORIA: Usuario {} (ADMIN) registró el Nuevo Lane '{}' (ID={}) dentro del Pool ID={}",
                 dto.getUsuarioId(), laneGuardado.getNombre(), laneGuardado.getId(), pool.getId());
 
+        // Devolvemos el DTO con la info de quién lo creó y en qué pool quedó.
         LaneRegistroDTO response = modelMapper.map(laneGuardado, LaneRegistroDTO.class);
         response.setPoolId(laneGuardado.getPool().getId());
         response.setUsuarioId(dto.getUsuarioId());

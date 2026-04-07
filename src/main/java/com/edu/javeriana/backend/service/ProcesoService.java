@@ -66,12 +66,14 @@ public class ProcesoService implements IProcesoService {
     @Override
     @Transactional
     public ProcesoRegistroDTO crearProceso(ProcesoRegistroDTO dto) {
+        // Buscamos la empresa y el autor del proceso.
         Empresa empresa = empresaRepository.findById(dto.getEmpresaId())
                 .orElseThrow(() -> new IllegalArgumentException("Empresa no encontrada"));
 
         Usuario autor = usuarioRepository.findById(dto.getAutorId())
                 .orElseThrow(() -> new IllegalArgumentException("Usuario autor no encontrado"));
 
+        // Preparamos el objeto Proceso con los datos del formulario.
         Proceso proceso = new Proceso();
         proceso.setNombre(dto.getNombre());
         proceso.setDescripcion(dto.getDescripcion());
@@ -79,6 +81,7 @@ public class ProcesoService implements IProcesoService {
         proceso.setEmpresa(empresa);
         proceso.setAutor(autor);
 
+        // Si no mandaron un Pool (contenedor), le asignamos el primero que encontremos de la empresa.
         Pool poolAsignado;
         if (dto.getPoolId() != null) {
             poolAsignado = poolRepository.findById(dto.getPoolId())
@@ -91,10 +94,13 @@ public class ProcesoService implements IProcesoService {
         }
         proceso.setPool(poolAsignado);
 
+        // Checamos si el autor tiene permiso de 'CREAR' en ese pool.
         validarPermisoDeRol(autor.getId(), poolAsignado.getId(), "CREAR");
 
+        // Por defecto, todo proceso nuevo empieza como BORRADOR.
         proceso.setEstado(EstadoProceso.BORRADOR);
 
+        // Guardamos y devolvemos los datos listos para el mapa.
         return toRegistroDTO(procesoRepository.save(proceso));
     }
 

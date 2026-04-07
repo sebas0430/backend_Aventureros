@@ -51,10 +51,11 @@ public class ActividadService implements IActividadService {
     @Override
     public ActividadRegistroDTO crearActividad(ActividadRegistroDTO dto) {
 
+        // Primero buscamos el proceso y el usuario que quiere crear la tarea.
         Proceso proceso = procesoService.obtenerProcesoEntity(dto.getProcesoId());
-
         Usuario usuario = usuarioService.obtenerUsuarioEntity(dto.getUsuarioId());
 
+        // Checamos si tiene permiso (solo editores o admins pueden meter tareas).
         boolean autorizado = RolGlobal.ADMINISTRADOR_EMPRESA.name().equals(usuario.getRol())
                 || RolGlobal.EDITOR.name().equals(usuario.getRol());
 
@@ -63,6 +64,7 @@ public class ActividadService implements IActividadService {
                     "No tienes permisos para agregar actividades. Se requiere rol EDITOR o ADMINISTRADOR_EMPRESA.");
         }
 
+        // Armamos el objeto Actividad con lo que nos mandaron.
         Actividad actividad = Actividad.builder()
                 .nombre(dto.getNombre())
                 .tipoActividad(dto.getTipoActividad())
@@ -73,14 +75,16 @@ public class ActividadService implements IActividadService {
                 .activa(true)
                 .build();
 
+        // Guardamos en la base de datos.
         actividad = actividadRepository.save(actividad);
         log.info("Actividad {} creada exitosamente en proceso {}", actividad.getId(), proceso.getId());
 
+        // Anotamos en el historial que alguien metió una tarea nueva.
         historialProcesoService.registrarAccion(proceso, usuario, "CREACION_ACTIVIDAD",
                 "Se agregó la actividad '" + actividad.getNombre() + "' de tipo '" + actividad.getTipoActividad()
                         + "' con rol responsable '" + actividad.getRolResponsable() + "'.");
 
-        // Mapear entidad → DTO existente
+        // Devolvemos los datos listos para el frente.
         ActividadRegistroDTO response = modelMapper.map(actividad, ActividadRegistroDTO.class);
         response.setProcesoId(actividad.getProceso().getId());
         return response;
@@ -93,11 +97,13 @@ public class ActividadService implements IActividadService {
     @Override
     public ActividadEdicionDTO editarActividad(Long actividadId, ActividadEdicionDTO dto) {
 
+        // Buscamos la actividad que queremos cambiar.
         Actividad actividad = actividadRepository.findById(actividadId)
                 .orElseThrow(() -> new ResourceNotFoundException(MSG_ACTIVIDAD_NO_ENCONTRADA));
 
         Usuario usuario = usuarioService.obtenerUsuarioEntity(dto.getUsuarioId());
 
+        // Validamos permisos igual que al crear.
         boolean autorizado = RolGlobal.ADMINISTRADOR_EMPRESA.name().equals(usuario.getRol())
                 || RolGlobal.EDITOR.name().equals(usuario.getRol());
 
@@ -106,6 +112,7 @@ public class ActividadService implements IActividadService {
                     "No tienes permisos para editar actividades. Se requiere rol EDITOR o ADMINISTRADOR_EMPRESA.");
         }
 
+        // Aquí vamos guardando qué cosas cambiaron para el log del historial.
         StringBuilder cambios = new StringBuilder();
 
         if (!actividad.getNombre().equals(dto.getNombre())) {
@@ -133,6 +140,7 @@ public class ActividadService implements IActividadService {
             actividad.setOrden(dto.getOrden());
         }
 
+        // Si hubo cambios, guardamos y registramos el historial.
         if (!cambios.isEmpty()) {
             actividad = actividadRepository.save(actividad);
             log.info("Actividad {} editada exitosamente", actividadId);

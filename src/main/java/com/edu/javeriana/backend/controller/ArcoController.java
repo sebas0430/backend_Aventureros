@@ -19,14 +19,14 @@ public class ArcoController {
 
     private final IArcoService arcoService;
 
-    // POST /api/arcos — Crear un arco entre dos nodos
+    // Aquí es donde creamos las "flechitas" que conectan los pasos del proceso.
     @PostMapping
     public ResponseEntity<ArcoRegistroDTO> crearArco(@Valid @RequestBody ArcoRegistroDTO dto) {
         ArcoRegistroDTO response = arcoService.crearArco(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // PUT /api/arcos/{id} — Editar un arco existente (cambiar origen/destino)
+    // Por si te equivocaste y quieres que la flecha apunte a otro lado.
     @PutMapping("/{id}")
     public ResponseEntity<ArcoEdicionDTO> editarArco(
             @PathVariable Long id,
@@ -35,19 +35,19 @@ public class ArcoController {
         return ResponseEntity.ok(response);
     }
 
-    // GET /api/arcos/proceso/{procesoId} — Listar todos los arcos de un proceso
+    // Trae todas las conexiones de un proceso para armar el mapa en el frente.
     @GetMapping("/proceso/{procesoId}")
     public ResponseEntity<List<ArcoRegistroDTO>> listarArcosPorProceso(@PathVariable Long procesoId) {
         return ResponseEntity.ok(arcoService.listarArcosPorProceso(procesoId));
     }
 
-    // GET /api/arcos/{id} — Obtener un arco por ID
+    // Trae los datos de una sola conexión por su ID.
     @GetMapping("/{id}")
     public ResponseEntity<ArcoRegistroDTO> obtenerArco(@PathVariable Long id) {
         return ResponseEntity.ok(arcoService.obtenerArcoPorId(id));
     }
 
-    // DELETE /api/arcos/{id}?usuarioId=X — Eliminar un arco específico (solo admin)
+    // Borra una flecha específica (ojo: solo si eres administrador).
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, String>> eliminarArco(
             @PathVariable Long id,
@@ -56,7 +56,7 @@ public class ArcoController {
         return ResponseEntity.ok(Map.of("mensaje", "Arco eliminado exitosamente"));
     }
 
-    // DELETE /api/arcos/proceso/{procesoId}?usuarioId=X — Eliminar todos los arcos de un proceso (solo admin)
+    // Función de pánico: borra todas las conexiones de un proceso para empezar de cero.
     @DeleteMapping("/proceso/{procesoId}")
     public ResponseEntity<Map<String, String>> eliminarArcosPorProceso(
             @PathVariable Long procesoId,

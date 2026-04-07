@@ -19,7 +19,7 @@ public class GatewayController {
 
     private final IGatewayService gatewayService;
 
-    // POST /api/gateways — Crear un gateway (solo autor o admin)
+    // Crea un rombo de decisión (Gateway) en el diagrama. Solo para autores o admins.
     @PostMapping
     public ResponseEntity<GatewayRegistroDTO> crearGateway(
             @Valid @RequestBody GatewayRegistroDTO dto) {
@@ -27,7 +27,7 @@ public class GatewayController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // PUT /api/gateways/{id} — Editar un gateway existente
+    // Por si el rombo ahora es de otro tipo (ej. de AND a OR).
     @PutMapping("/{id}")
     public ResponseEntity<GatewayEdicionDTO> editarGateway(
             @PathVariable Long id,
@@ -36,14 +36,14 @@ public class GatewayController {
         return ResponseEntity.ok(response);
     }
 
-    // GET /api/gateways/proceso/{procesoId} — Listar todos los gateways de un proceso
+    // Saca todos los gateways que tiene el dibujo de un proceso.
     @GetMapping("/proceso/{procesoId}")
     public ResponseEntity<List<GatewayRegistroDTO>> listarGatewaysPorProceso(
             @PathVariable Long procesoId) {
         return ResponseEntity.ok(gatewayService.listarGatewaysPorProceso(procesoId));
     }
 
-    // DELETE /api/gateways/{id}?usuarioId=X — Eliminar un gateway (solo admin)
+    // Borra un solo rombo.
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, String>> eliminarGateway(
             @PathVariable Long id,
@@ -52,7 +52,7 @@ public class GatewayController {
         return ResponseEntity.ok(Map.of("mensaje", "Gateway eliminado exitosamente"));
     }
 
-    // DELETE /api/gateways/proceso/{procesoId}?usuarioId=X — Eliminar todos los gateways de un proceso (solo admin)
+    // Borra todos los rombos de una. Útil si vas a rediseñar todo el flujo.
     @DeleteMapping("/proceso/{procesoId}")
     public ResponseEntity<Map<String, String>> eliminarGatewaysPorProceso(
             @PathVariable Long procesoId,

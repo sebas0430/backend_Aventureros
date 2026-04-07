@@ -20,6 +20,7 @@ public class PoolController {
 
     private final IPoolService poolService;
 
+    // Crea un Pool nuevo. El Pool es el contenedor grande del diagrama.
     @PostMapping
     public ResponseEntity<PoolRegistroDTO> crearPool(@Valid @RequestBody PoolRegistroDTO dto) {
         try {
@@ -31,6 +32,7 @@ public class PoolController {
         }
     }
 
+    // Cambia los datos básicos de un Pool.
     @PutMapping("/{id}")
     public ResponseEntity<PoolEdicionDTO> editarPool(@PathVariable Long id, @Valid @RequestBody PoolEdicionDTO dto) {
         try {
@@ -42,6 +44,7 @@ public class PoolController {
         }
     }
 
+    // Borra un Pool (quitará el contenedor del mapa).
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarPool(@PathVariable Long id, @RequestParam Long usuarioId) {
         try {
@@ -54,6 +57,7 @@ public class PoolController {
         }
     }
 
+    // Lista todos los Pools que pertenecen a una empresa.
     @GetMapping("/empresa/{empresaId}")
     public ResponseEntity<List<PoolRegistroDTO>> listarPoolsPorEmpresa(@PathVariable Long empresaId) {
         try {

@@ -50,10 +50,13 @@ public class NotificacionExternaService implements INotificacionExternaService {
     @Override
     @Transactional
     public ConectorExternoRegistroDTO crearConector(ConectorExternoRegistroDTO dto) {
+        // Buscamos la empresa que quiere conectarse con algo de afuera (ej. un CRM).
         Empresa empresa = empresaService.obtenerEmpresaEntity(dto.getEmpresaId());
 
+        // Validamos que sea el administrador de la empresa el que crea esto.
         validarAdminEmpresa(dto.getUsuarioId(), empresa.getId());
 
+        // Configuramos la puerta de salida (Webhook, Email, etc.).
         ConectorExterno conector = ConectorExterno.builder()
                 .nombre(dto.getNombre())
                 .tipo(dto.getTipo())
@@ -66,10 +69,12 @@ public class NotificacionExternaService implements INotificacionExternaService {
                 .empresa(empresa)
                 .build();
 
+        // Lo guardamos en la base de datos.
         ConectorExterno guardado = conectorExternoRepository.save(conector);
         log.info("AUDITORIA: Usuario {} creó conector externo '{}' (tipo={}) para empresa {}",
                 dto.getUsuarioId(), guardado.getNombre(), guardado.getTipo(), empresa.getId());
 
+        // Devolvemos el DTO con la configuración lista.
         ConectorExternoRegistroDTO response = modelMapper.map(guardado, ConectorExternoRegistroDTO.class);
         response.setEmpresaId(guardado.getEmpresa().getId());
         response.setUsuarioId(dto.getUsuarioId());

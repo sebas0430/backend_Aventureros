@@ -18,6 +18,7 @@ public class UsuarioController {
 
     private final IUsuarioService usuarioService;
 
+    // Registra a alguien nuevo en el sistema (el admin manda la invitación).
     @PostMapping("/invitar")
     public ResponseEntity<UsuarioRegistroDTO> invitarUsuario(@RequestBody Map<String, Object> body) {
         String correo   = (String) body.get("correo");
@@ -29,6 +30,7 @@ public class UsuarioController {
                 .body(usuarioService.invitarUsuario(correo, password, rol, empresaId));
     }
 
+    // El clásico login: checa el correo y la contraseña cifrada.
     @PostMapping("/login")
     public ResponseEntity<UsuarioLoginDTO> iniciarSesion(@RequestBody Map<String, String> body) {
         String correo   = body.get("correo");
@@ -37,16 +39,19 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.iniciarSesion(correo, password));
     }
 
+    // Obtener los datos de un usuario por su ID.
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioRegistroDTO> obtenerUsuario(@PathVariable Long id) {
         return ResponseEntity.ok(usuarioService.obtenerUsuario(id));
     }
 
+    // Listar a todos los que trabajan en la misma empresa.
     @GetMapping("/empresa/{empresaId}")
     public ResponseEntity<List<UsuarioRegistroDTO>> listarPorEmpresa(@PathVariable Long empresaId) {
         return ResponseEntity.ok(usuarioService.listarPorEmpresa(empresaId));
     }
 
+    // Para cambiar el rol de alguien o activarlo/desactivarlo.
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioRegistroDTO> actualizarUsuario(
             @PathVariable Long id,
@@ -57,6 +62,7 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.actualizarUsuario(id, rol, activo));
     }
 
+    // Borrar a un usuario definitivamente.
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, String>> eliminarUsuario(@PathVariable Long id) {
         usuarioService.eliminarUsuario(id);

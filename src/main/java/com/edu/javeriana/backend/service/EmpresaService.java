@@ -46,6 +46,7 @@ public class EmpresaService implements IEmpresaService {
     @Override
     @Transactional
     public EmpresaRegistroDTO registrarEmpresa(EmpresaRegistroDTO dto) {
+        // Validamos que la empresa y el correo del admin no existan ya.
         if (empresaRepository.findByNit(dto.getNit()).isPresent()) {
             throw new IllegalArgumentException("Ya existe una empresa con ese NIT");
         }
@@ -53,6 +54,7 @@ public class EmpresaService implements IEmpresaService {
             throw new IllegalArgumentException("Ya existe un usuario con este username");
         }
 
+        // Creamos la empresa nueva.
         Empresa empresa = new Empresa();
         empresa.setNombre(dto.getNombre());
         empresa.setNit(dto.getNit());
@@ -60,18 +62,17 @@ public class EmpresaService implements IEmpresaService {
 
         Empresa guardada = empresaRepository.save(empresa);
 
-        // Crear usuario administrador inicial de la empresa
+        // De una vez le creamos su usuario Administrador para que pueda entrar.
         Usuario admin = new Usuario();
         admin.setUsername(dto.getCorreoContacto());
-        // El password idealmente debe venir encriptado (acá se asume que se asigna o ya viene para guardarse)
-        admin.setPasswordHash(dto.getPasswordAdmin());
+        admin.setPasswordHash(dto.getPasswordAdmin()); // Aquí se guarda la clave del jefe.
         admin.setRol("ADMINISTRADOR_EMPRESA");
         admin.setActivo(true);
         admin.setEmpresa(guardada);
 
         usuarioService.guardarUsuarioEntity(admin);
 
-        // Crear Pool por defecto para la empresa (HU-21)
+        // Y le regalamos un Pool por defecto para que no empiece con el mapa vacío.
         Pool poolDefault = Pool.builder()
                 .nombre("Pool Principal - " + guardada.getNombre())
                 .descripcion("Área de procesos principal creada por defecto para la organización.")
@@ -79,10 +80,10 @@ public class EmpresaService implements IEmpresaService {
                 .build();
         poolService.guardarPoolEntity(poolDefault);
 
-        // Mapear entidad → DTO existente
+        // Convertimos a DTO (quitando la clave por seguridad) y devolvemos.
         EmpresaRegistroDTO response = modelMapper.map(guardada, EmpresaRegistroDTO.class);
-        response.setCorreoContacto(admin.getUsername()); // Llenamos de vuelta para el response
-        response.setPasswordAdmin(null); // No devuelve el password
+        response.setCorreoContacto(admin.getUsername()); 
+        response.setPasswordAdmin(null); 
 
         return response;
     }

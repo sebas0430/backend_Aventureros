@@ -19,6 +19,7 @@ public class MessageCatchController {
 
     private final IMessageCatchService messageCatchService;
 
+    // Este endpoint "atrapa" mensajes que vienen de afuera para despertar procesos.
     @PostMapping("/recibir")
     public ResponseEntity<List<MensajeCatchDTO>> recibirMensaje(@Valid @RequestBody MensajeCatchDTO dto) {
         try {
@@ -30,6 +31,7 @@ public class MessageCatchController {
         }
     }
 
+    // Ver el historial de todos los mensajes atrapados en un proceso.
     @GetMapping("/logs/proceso/{procesoId}")
     public ResponseEntity<List<MensajeCatchDTO>> logsPorProceso(@PathVariable Long procesoId) {
         try {
@@ -39,6 +41,7 @@ public class MessageCatchController {
         }
     }
 
+    // Ver el historial de mensajes atrapados por un evento catch específico.
     @GetMapping("/logs/catch/{eventoCatchId}")
     public ResponseEntity<List<MensajeCatchDTO>> logsPorCatch(@PathVariable Long eventoCatchId) {
         try {

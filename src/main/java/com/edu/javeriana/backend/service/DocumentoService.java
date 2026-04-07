@@ -47,28 +47,30 @@ public class DocumentoService implements IDocumentoService {
     @Override
     @Transactional
     public DocumentoDTO subirDocumento(Long procesoId, MultipartFile archivo) {
+        // Buscamos el proceso al que le vamos a colgar el archivo.
         Proceso proceso = procesoService.obtenerProcesoEntity(procesoId);
 
+        // Si mandaron algo vacío, pues no hay nada que guardar.
         if (archivo.isEmpty()) {
             throw new IllegalArgumentException("El archivo está vacío");
         }
 
         try {
-            // Asegurarse de que el directorio exista
+            // Revisamos que la carpeta "uploads/" donde guardamos las cosas exista.
             Path uploadPath = Paths.get(UPLOAD_DIR);
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
 
-            // Generar un nombre único para evitar colisiones
+            // Le ponemos un ID único al nombre del archivo para que no se sobreescriban si se llaman igual.
             String nombreOriginal = archivo.getOriginalFilename();
             String nombreUnico = UUID.randomUUID().toString() + "_" + nombreOriginal;
             Path filePath = uploadPath.resolve(nombreUnico);
 
-            // Copiar el archivo al sistema local
+            // Movemos el archivo de la memoria ram al disco duro (carpeta uploads).
             Files.copy(archivo.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            // Guardar en base de datos
+            // Guardamos la referencia (el nombre y la ruta) en la base de datos.
             Documento documento = new Documento();
             documento.setNombreArchivo(nombreOriginal);
             documento.setRutaArchivo(filePath.toString());
@@ -77,6 +79,7 @@ public class DocumentoService implements IDocumentoService {
 
             Documento guardado = documentoRepository.save(documento);
 
+            // Mapeamos a DTO y listo.
             DocumentoDTO dto = modelMapper.map(guardado, DocumentoDTO.class);
             dto.setProcesoId(guardado.getProceso().getId());
             

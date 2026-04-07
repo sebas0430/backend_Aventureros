@@ -23,6 +23,7 @@ public class ProcesoController {
 
     private final IProcesoService procesoService;
 
+    // Crea un proceso vacío para empezar a trabajar en él.
     @PostMapping
     public ResponseEntity<ProcesoRegistroDTO> crearProceso(@Valid @RequestBody ProcesoRegistroDTO dto) {
         try {
@@ -32,6 +33,7 @@ public class ProcesoController {
         }
     }
 
+    // Lista los procesos de una empresa, con opción de filtrar por estado o categoría.
     @GetMapping("/empresa/{empresaId}")
     public ResponseEntity<List<ProcesoRegistroDTO>> listarPorEmpresa(
             @PathVariable Long empresaId,
@@ -47,6 +49,7 @@ public class ProcesoController {
         }
     }
 
+    // Dame toda la info de un solo proceso por su ID.
     @GetMapping("/{id}")
     public ResponseEntity<ProcesoRegistroDTO> obtenerProceso(@PathVariable Long id) {
         try {
@@ -56,11 +59,13 @@ public class ProcesoController {
         }
     }
 
+    // Lista los procesos que ha creado un usuario específico (el autor).
     @GetMapping("/autor/{autorId}")
     public ResponseEntity<List<ProcesoRegistroDTO>> listarPorAutor(@PathVariable Long autorId) {
         return ResponseEntity.ok(procesoService.listarPorAutor(autorId));
     }
 
+    // ¡IMPORTANTE! Este guarda el JSON que define todo el dibujo del proceso.
     @PatchMapping("/{id}/definicion")
     public ResponseEntity<ProcesoEdicionDTO> actualizarDefinicion(
             @PathVariable Long id,
@@ -72,6 +77,7 @@ public class ProcesoController {
         }
     }
 
+    // Cambia los datos generales (nombre, descripción) de un proceso.
     @PutMapping("/{id}")
     public ResponseEntity<ProcesoEdicionDTO> editarProceso(
             @PathVariable Long id,
@@ -85,6 +91,7 @@ public class ProcesoController {
         }
     }
 
+    // Elimina un proceso (lo pone en modo INACTIVO).
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarProceso(@PathVariable Long id, @RequestParam Long usuarioId) {
         try {
@@ -97,6 +104,7 @@ public class ProcesoController {
         }
     }
 
+    // Cambia el estado (BORRADOR, PUBLICADO, etc.) del proceso.
     @PatchMapping("/{id}/estado")
     public ResponseEntity<ProcesoEdicionDTO> cambiarEstado(
             @PathVariable Long id,
@@ -112,6 +120,7 @@ public class ProcesoController {
         }
     }
 
+    // Comparte el proceso con otro Pool para que puedan verlo u operarlo.
     @PostMapping("/{id}/compartir")
     public ResponseEntity<ProcesoCompartirDTO> compartirProceso(
             @PathVariable Long id,
@@ -126,6 +135,7 @@ public class ProcesoController {
         }
     }
 
+    // Quita el permiso de un Pool sobre un proceso compartido.
     @DeleteMapping("/{id}/compartir/{poolDestinoId}")
     public ResponseEntity<Void> quitarComparticionProceso(
             @PathVariable Long id,
@@ -141,6 +151,7 @@ public class ProcesoController {
         }
     }
 
+    // Lista todos los procesos que le han compartido a un Pool.
     @GetMapping("/compartidos/{poolId}")
     public ResponseEntity<List<ProcesoRegistroDTO>> listarProcesosCompartidosConPool(
             @PathVariable Long poolId,

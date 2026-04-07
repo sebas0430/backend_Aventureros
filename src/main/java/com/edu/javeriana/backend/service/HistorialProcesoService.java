@@ -22,12 +22,15 @@ public class HistorialProcesoService implements IHistorialProcesoService {
     @Override
     @Transactional
     public void registrarAccion(Proceso proceso, Usuario usuario, String accion, String detalle) {
+        // Creamos una entrada en el libro de bitácora del proceso.
         HistorialProceso historial = HistorialProceso.builder()
                 .proceso(proceso)
                 .usuario(usuario)
                 .accion(accion)
                 .detalle(detalle)
                 .build();
+        
+        // Guardamos el movimiento para que luego se pueda auditar quién hizo qué.
         historialProcesoRepository.save(historial);
         log.info("Historial registrado para proceso {}: {}", proceso.getId(), accion);
     }

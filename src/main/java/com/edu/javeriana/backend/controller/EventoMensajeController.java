@@ -20,6 +20,7 @@ public class EventoMensajeController {
 
     private final IEventoMensajeService eventoMensajeService;
 
+    // Crea un evento de tipo mensaje (un punto donde el proceso manda o espera una señal).
     @PostMapping
     public ResponseEntity<EventoMensajeRegistroDTO> crearEvento(
             @Valid @RequestBody EventoMensajeRegistroDTO dto) {
@@ -27,12 +28,14 @@ public class EventoMensajeController {
                 .body(eventoMensajeService.crearEvento(dto));
     }
 
+    // Lista todos los eventos de mensaje que tiene un proceso.
     @GetMapping("/proceso/{procesoId}")
     public ResponseEntity<List<EventoMensajeRegistroDTO>> listarPorProceso(
             @PathVariable Long procesoId) {
         return ResponseEntity.ok(eventoMensajeService.listarPorProceso(procesoId));
     }
 
+    // Borra un evento de mensaje.
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, String>> eliminarEvento(
             @PathVariable Long id,
@@ -41,12 +44,14 @@ public class EventoMensajeController {
         return ResponseEntity.ok(Map.of("mensaje", "Evento de mensaje eliminado correctamente"));
     }
 
+    // ¡DISPARA EL MENSAJE! Este es el que hace que la señal salga volando a otros procesos.
     @PostMapping("/lanzar")
     public ResponseEntity<List<MensajeEjecucionDTO>> lanzarMensajeThrow(
             @Valid @RequestBody MensajeLanzarDTO dto) {
         return ResponseEntity.ok(eventoMensajeService.lanzarMensaje(dto));
     }
 
+    // Mira quién ha recibido qué mensaje (el historial de chismes entre procesos).
     @GetMapping("/logs/{eventoId}")
     public ResponseEntity<List<MensajeEjecucionDTO>> listarLogsDeLanzamiento(
             @PathVariable Long eventoId) {

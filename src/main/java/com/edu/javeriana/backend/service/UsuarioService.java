@@ -46,25 +46,31 @@ public class UsuarioService implements IUsuarioService {
     @Override
     @Transactional
     public UsuarioRegistroDTO invitarUsuario(String correo, String password, String rol, Long empresaId) {
+        // Checamos que no nos estén tratando de registrar a alguien que ya existe.
         if (usuarioRepository.findByUsername(correo).isPresent()) {
             throw new IllegalArgumentException("Ya existe un usuario con este correo asociado a una cuenta");
         }
 
+        // Buscamos la empresa a la que va a pertenecer el nuevo integrante.
         Empresa empresa = empresaService.obtenerEmpresaEntity(empresaId);
 
+        // Creamos el nuevo usuario y, SUPER IMPORTANTE, ciframos la contraseña.
         Usuario usuario = new Usuario();
         usuario.setUsername(correo);
-        usuario.setPasswordHash(passwordEncoder.encode(password)); // Ciframos aquí!
+        usuario.setPasswordHash(passwordEncoder.encode(password)); // ¡Aquí es donde pasa la magia del cifrado!
         usuario.setRol(rol);
         usuario.setEmpresa(empresa);
         usuario.setActivo(true);
 
+        // Lo guardamos en la base.
         Usuario guardado = usuarioRepository.save(usuario);
 
+        // Le mandamos un mail avisándole que ya puede entrar.
         emailService.enviarInvitacion(correo, password, empresa.getNombre(), rol);
 
         log.info("Usuario invitado exitosamente: {} con rol {} para la empresa {}", correo, rol, empresa.getNombre());
 
+        // Devolvemos los datos básicos para que el frente sepa que todo salió bien.
         UsuarioRegistroDTO response = modelMapper.map(guardado, UsuarioRegistroDTO.class);
         response.setCorreo(guardado.getUsername());
         response.setEmpresaId(guardado.getEmpresa().getId());
@@ -74,17 +80,21 @@ public class UsuarioService implements IUsuarioService {
     @Override
     @Transactional(readOnly = true)
     public UsuarioLoginDTO iniciarSesion(String correo, String password) {
+        // Buscamos al usuario por su correo.
         Usuario usuario = usuarioRepository.findByUsername(correo)
                 .orElseThrow(() -> new IllegalArgumentException("Credenciales inválidas"));
 
-        if (!passwordEncoder.matches(password, usuario.getPasswordHash())) { // Comparamos el cifrado aquí!
+        // Comparamos la contraseña que nos mandan con el hash que tenemos guardado.
+        if (!passwordEncoder.matches(password, usuario.getPasswordHash())) { 
             throw new IllegalArgumentException("Credenciales inválidas");
         }
 
+        // Si el usuario está castigado (inactivo), no lo dejamos pasar.
         if (usuario.getActivo() == null || !usuario.getActivo()) {
         throw new IllegalArgumentException("El usuario se encuentra inactivo");
         }   
 
+        // Si todo está bien, armamos su objeto de sesión.
         UsuarioLoginDTO response = modelMapper.map(usuario, UsuarioLoginDTO.class);
         response.setCorreo(usuario.getUsername());
         response.setEmpresaId(usuario.getEmpresa().getId());

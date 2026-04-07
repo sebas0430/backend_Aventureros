@@ -52,10 +52,12 @@ public class RolProcesoService implements IRolProcesoService {
     @Override
     @Transactional
     public RolProcesoRegistroDTO crearRolProceso(RolProcesoRegistroDTO dto) {
+        // Buscamos la empresa para la que estamos definiendo este rol de trabajo (ej. "Contabilidad").
         Empresa empresa = empresaService.obtenerEmpresaEntity(dto.getEmpresaId());
 
         Usuario solicitante = usuarioService.obtenerUsuarioEntity(dto.getUsuarioId());
 
+        // Solo los administradores de la empresa pueden definir estos roles globales.
         if (!solicitante.getEmpresa().getId().equals(empresa.getId())) {
             throw new BusinessRuleException("No perteneces a esta empresa");
         }
@@ -65,21 +67,25 @@ public class RolProcesoService implements IRolProcesoService {
                     "Solo un administrador de la empresa puede crear roles de proceso");
         }
 
+        // Evitamos nombres duplicados en la misma empresa.
         if (rolProcesoRepository.existsByEmpresaIdAndNombre(empresa.getId(), dto.getNombre())) {
             throw new BusinessRuleException(
                     "Ya existe un rol de proceso con el nombre '" + dto.getNombre() + "' en esta empresa");
         }
 
+        // Creamos el rol de proceso.
         RolProceso rolProceso = RolProceso.builder()
                 .nombre(dto.getNombre())
                 .descripcion(dto.getDescripcion())
                 .empresa(empresa)
                 .build();
 
+        // Lo guardamos en la base de datos.
         RolProceso guardado = rolProcesoRepository.save(rolProceso);
         log.info("AUDITORIA: Usuario {} (ADMIN) creó el Rol de Proceso '{}' (ID={}) en la Empresa ID={}",
                 solicitante.getId(), guardado.getNombre(), guardado.getId(), empresa.getId());
 
+        // Devolvemos los datos mapeados.
         RolProcesoRegistroDTO response = modelMapper.map(guardado, RolProcesoRegistroDTO.class);
         response.setEmpresaId(guardado.getEmpresa().getId());
         response.setUsuarioId(dto.getUsuarioId());

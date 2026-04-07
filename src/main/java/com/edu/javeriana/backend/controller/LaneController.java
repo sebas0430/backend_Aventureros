@@ -20,6 +20,7 @@ public class LaneController {
 
     private final ILaneService laneService;
 
+    // Crea un carril (lane) para organizar quién hace qué dentro del proceso.
     @PostMapping
     public ResponseEntity<LaneRegistroDTO> crearLane(@Valid @RequestBody LaneRegistroDTO dto) {
         try {
@@ -31,6 +32,7 @@ public class LaneController {
         }
     }
 
+    // Cambia el nombre o los datos de un carril.
     @PutMapping("/{id}")
     public ResponseEntity<LaneEdicionDTO> editarLane(@PathVariable Long id, @Valid @RequestBody LaneEdicionDTO dto) {
         try {
@@ -42,6 +44,7 @@ public class LaneController {
         }
     }
 
+    // Borra un carril (pero no borra las tareas de adentro automágicamente).
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarLane(@PathVariable Long id, @RequestParam Long usuarioId) {
         try {
@@ -54,6 +57,7 @@ public class LaneController {
         }
     }
 
+    // Dame la lista de todos los carriles que tiene un Pool.
     @GetMapping("/pool/{poolId}")
     public ResponseEntity<List<LaneRegistroDTO>> listarLanesPorPool(@PathVariable Long poolId, @RequestParam Long usuarioId) {
         try {

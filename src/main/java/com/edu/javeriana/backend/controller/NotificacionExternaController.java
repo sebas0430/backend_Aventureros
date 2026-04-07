@@ -22,6 +22,7 @@ public class NotificacionExternaController {
 
     // ===================== Conectores =====================
 
+    // Configura una conexión externa (ej. para mandar WhatsApps).
     @PostMapping("/conectores")
     public ResponseEntity<ConectorExternoRegistroDTO> crearConector(
             @Valid @RequestBody ConectorExternoRegistroDTO dto) {
@@ -29,6 +30,7 @@ public class NotificacionExternaController {
                 .body(notificacionExternaService.crearConector(dto));
     }
 
+    // Cambia la configuración de un conector existente.
     @PutMapping("/conectores/{id}")
     public ResponseEntity<ConectorExternoRegistroDTO> editarConector(
             @PathVariable Long id,
@@ -36,6 +38,7 @@ public class NotificacionExternaController {
         return ResponseEntity.ok(notificacionExternaService.editarConector(id, dto));
     }
 
+    // Borra un conector del sistema.
     @DeleteMapping("/conectores/{id}")
     public ResponseEntity<Map<String, String>> eliminarConector(
             @PathVariable Long id,
@@ -44,6 +47,7 @@ public class NotificacionExternaController {
         return ResponseEntity.ok(Map.of("mensaje", "Conector eliminado exitosamente"));
     }
 
+    // Lista todos los conectores configurados para una empresa.
     @GetMapping("/conectores/empresa/{empresaId}")
     public ResponseEntity<List<ConectorExternoRegistroDTO>> listarConectores(
             @PathVariable Long empresaId) {
@@ -52,6 +56,7 @@ public class NotificacionExternaController {
 
     // ===================== Envío =====================
 
+    // ¡ENVÍA LA NOTIFICACIÓN! Se encarga de contactar con el servicio externo.
     @PostMapping("/enviar")
     public ResponseEntity<NotificacionExternaDTO> enviarMensaje(
             @Valid @RequestBody EnvioExternoDTO dto) {
@@ -60,11 +65,13 @@ public class NotificacionExternaController {
 
     // ===================== Logs =====================
 
+    // Ver el historial de notificaciones mandadas desde un proceso.
     @GetMapping("/logs/proceso/{procesoId}")
     public ResponseEntity<List<NotificacionExternaDTO>> logsPorProceso(@PathVariable Long procesoId) {
         return ResponseEntity.ok(notificacionExternaService.listarLogsPorProceso(procesoId));
     }
 
+    // Ver el historial de todo lo que ha pasado por un conector específico.
     @GetMapping("/logs/conector/{conectorId}")
     public ResponseEntity<List<NotificacionExternaDTO>> logsPorConector(@PathVariable Long conectorId) {
         return ResponseEntity.ok(notificacionExternaService.listarLogsPorConector(conectorId));

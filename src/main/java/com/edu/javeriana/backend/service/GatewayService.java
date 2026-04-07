@@ -47,21 +47,26 @@ public class GatewayService implements IGatewayService {
     @Transactional
     public GatewayRegistroDTO crearGateway(GatewayRegistroDTO dto) {
 
+        // Buscamos el proceso donde el usuario quiere poner el rombo de decisión.
         Proceso proceso = procesoService.obtenerProcesoEntity(dto.getProcesoId());
 
+        // Validamos que el usuario tenga permiso de mover las piezas del diagrama.
         validarUsuarioAutorizado(proceso, dto.getUsuarioId());
 
+        // Convertimos el tipo de gateway (ej. "EXCLUSIVO") para que la base lo entienda.
         TipoGateway tipoGateway = parseTipoGateway(dto.getTipo());
 
+        // Creamos el Gateway (rombo) en el sistema.
         Gateway gateway = Gateway.builder()
                 .nombre(dto.getNombre())
                 .tipo(tipoGateway)
                 .proceso(proceso)
                 .build();
 
+        // Guardamos y avisamos que todo salió bien.
         Gateway guardado = gatewayRepository.save(gateway);
 
-        // Mapear entidad → DTO existente
+        // Mapeamos a DTO para devolver la info al frente.
         GatewayRegistroDTO response = modelMapper.map(guardado, GatewayRegistroDTO.class);
         response.setTipo(guardado.getTipo().name());
         response.setProcesoId(guardado.getProceso().getId());
