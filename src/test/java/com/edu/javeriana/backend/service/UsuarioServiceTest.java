@@ -13,6 +13,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +36,9 @@ class UsuarioServiceTest {
 
     @Mock
     private ModelMapper modelMapper;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private UsuarioService usuarioService;
@@ -61,6 +65,7 @@ class UsuarioServiceTest {
     void invitarUsuario_Exitoso() {
         when(usuarioRepository.findByUsername(anyString())).thenReturn(Optional.empty());
         when(empresaService.obtenerEmpresaEntity(1L)).thenReturn(empresa);
+        when(passwordEncoder.encode(anyString())).thenReturn("hashedPass");
         when(usuarioRepository.save(any())).thenReturn(usuario);
         
         UsuarioRegistroDTO dto = new UsuarioRegistroDTO();
@@ -84,6 +89,7 @@ class UsuarioServiceTest {
     @Test
     void iniciarSesion_Exitoso() {
         when(usuarioRepository.findByUsername("test@test.com")).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
         
         UsuarioLoginDTO loginDto = new UsuarioLoginDTO();
         loginDto.setCorreo("test@test.com");
@@ -99,6 +105,7 @@ class UsuarioServiceTest {
     @Test
     void iniciarSesion_CredencialesInvalidas() {
         when(usuarioRepository.findByUsername("test@test.com")).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
         assertThrows(IllegalArgumentException.class, () -> usuarioService.iniciarSesion("test@test.com", "wrong"));
     }
 
@@ -106,6 +113,7 @@ class UsuarioServiceTest {
     void iniciarSesion_UsuarioInactivo() {
         usuario.setActivo(false);
         when(usuarioRepository.findByUsername("test@test.com")).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
         assertThrows(IllegalArgumentException.class, () -> usuarioService.iniciarSesion("test@test.com", "pass"));
     }
 
