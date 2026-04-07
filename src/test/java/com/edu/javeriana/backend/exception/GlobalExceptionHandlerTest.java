@@ -30,7 +30,7 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals("Not Found", response.getBody().getError());
+        assertEquals("No Encontrado", response.getBody().getError());
         assertEquals("Not found", response.getBody().getMessage());
     }
 
@@ -44,7 +44,7 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals("Bad Request", response.getBody().getError());
+        assertEquals("Petición Incorrecta", response.getBody().getError());
         assertEquals("Error", response.getBody().getMessage());
     }
 
@@ -80,7 +80,7 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals("Internal Server Error", response.getBody().getError());
+        assertEquals("Error Interno del Servidor", response.getBody().getError());
         assertEquals("Internal error", response.getBody().getMessage());
     }
 }
