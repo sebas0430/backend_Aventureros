@@ -57,6 +57,9 @@ public class ProcesoService implements IProcesoService {
     // ─── Helper: Proceso → ProcesoRegistroDTO ───────────────────────────────
     private ProcesoRegistroDTO toRegistroDTO(Proceso p) {
         ProcesoRegistroDTO dto = modelMapper.map(p, ProcesoRegistroDTO.class);
+        dto.setId(p.getId());
+        dto.setEstado(p.getEstado());
+        dto.setDefinicionJson(p.getDefinicionJson());
         dto.setEmpresaId(p.getEmpresa().getId());
         dto.setAutorId(p.getAutor().getId());
         if (p.getPool() != null) dto.setPoolId(p.getPool().getId());

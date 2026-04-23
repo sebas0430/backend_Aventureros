@@ -112,6 +112,7 @@ public class PoolService implements IPoolService {
                 .stream()
                 .map(pool -> {
                     PoolRegistroDTO dto = modelMapper.map(pool, PoolRegistroDTO.class);
+                    dto.setId(pool.getId());
                     dto.setEmpresaId(pool.getEmpresa().getId());
                     return dto;
                 })

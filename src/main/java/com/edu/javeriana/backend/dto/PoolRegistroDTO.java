@@ -7,6 +7,8 @@ import lombok.Data;
 @Data
 public class PoolRegistroDTO {
 
+    private Long id;
+
     @NotBlank(message = "El nombre del pool es obligatorio")
     private String nombre;
 
