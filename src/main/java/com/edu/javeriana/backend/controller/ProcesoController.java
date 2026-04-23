@@ -25,11 +25,13 @@ public class ProcesoController {
 
     // Crea un proceso vacío para empezar a trabajar en él.
     @PostMapping
-    public ResponseEntity<ProcesoRegistroDTO> crearProceso(@Valid @RequestBody ProcesoRegistroDTO dto) {
+    public ResponseEntity<?> crearProceso(@Valid @RequestBody ProcesoRegistroDTO dto) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(procesoService.crearProceso(dto));
         } catch (BusinessRuleException | IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error interno: " + e.getMessage());
         }
     }
 
@@ -67,13 +69,20 @@ public class ProcesoController {
 
     // ¡IMPORTANTE! Este guarda el JSON que define todo el dibujo del proceso.
     @PatchMapping("/{id}/definicion")
-    public ResponseEntity<ProcesoEdicionDTO> actualizarDefinicion(
+    public ResponseEntity<?> actualizarDefinicion(
             @PathVariable Long id,
             @RequestBody Map<String, String> body) {
         try {
-            return ResponseEntity.ok(procesoService.actualizarDefinicion(id, body.get("definicionJson")));
+            String definicionJson = body.get("definicionJson");
+            if (definicionJson == null) {
+                return ResponseEntity.badRequest().body("El campo definicionJson es requerido");
+            }
+            ProcesoEdicionDTO resultado = procesoService.actualizarDefinicion(id, definicionJson);
+            return ResponseEntity.ok(resultado);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error al guardar: " + e.getMessage());
         }
     }
 
