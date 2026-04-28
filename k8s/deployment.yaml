@@ -45,10 +45,10 @@ spec:
    - host: grupo13.inphotech.co
      http:
        paths:
-       - path: /
+       - path: /api
          pathType: Prefix
          backend:
            service:
              name: backend-aventureros
              port:
-               number: 8080
+               number: 80
