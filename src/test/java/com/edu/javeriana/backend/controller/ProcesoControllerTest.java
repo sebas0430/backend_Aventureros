@@ -40,10 +40,9 @@ class ProcesoControllerTest {
         dto.setNombre("Proceso X");
         Mockito.when(procesoService.crearProceso(any())).thenReturn(dto);
 
-        ResponseEntity<?> response = procesoController.crearProceso(dto);
+        ResponseEntity<ProcesoRegistroDTO> response = procesoController.crearProceso(dto);
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        ProcesoRegistroDTO body = (ProcesoRegistroDTO) response.getBody();
-        assertEquals("Proceso X", body.getNombre());
+        assertEquals("Proceso X", response.getBody().getNombre());
     }
 
     @Test
@@ -83,7 +82,7 @@ class ProcesoControllerTest {
         Map<String, String> body = new HashMap<>();
         body.put("definicionJson", "{}");
 
-        ResponseEntity<?> response = procesoController.actualizarDefinicion(1L, body);
+        ResponseEntity<ProcesoEdicionDTO> response = procesoController.actualizarDefinicion(1L, body);
         assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 
