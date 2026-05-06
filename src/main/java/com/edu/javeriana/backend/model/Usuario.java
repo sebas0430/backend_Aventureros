@@ -44,4 +44,8 @@ public class Usuario {
     @JsonIgnore
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<AsignacionRolPool> rolesPool;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<HistorialProceso> historiales;
 }

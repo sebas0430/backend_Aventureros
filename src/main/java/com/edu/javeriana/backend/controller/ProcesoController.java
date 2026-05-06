@@ -67,7 +67,7 @@ public class ProcesoController {
         return ResponseEntity.ok(procesoService.listarPorAutor(autorId));
     }
 
-    // ¡IMPORTANTE! Este guarda el JSON que define todo el dibujo del proceso.
+    //Este guarda el JSON que define todo el dibujo del proceso.
     @PatchMapping("/{id}/definicion")
     public ResponseEntity<?> actualizarDefinicion(
             @PathVariable Long id,
@@ -100,7 +100,7 @@ public class ProcesoController {
         }
     }
 
-    // Elimina un proceso (lo pone en modo INACTIVO).
+    // Elimina un proceso.
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarProceso(@PathVariable Long id, @RequestParam Long usuarioId) {
         try {

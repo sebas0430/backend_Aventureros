@@ -156,8 +156,37 @@ public class UsuarioService implements IUsuarioService {
     public void eliminarUsuario(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
+
+        // Buscar un administrador de la misma empresa para reasignarle los registros
+        Usuario admin = usuarioRepository.findByEmpresaIdAndRol(usuario.getEmpresa().getId(), "ADMINISTRADOR_EMPRESA")
+                .stream()
+                .filter(u -> !u.getId().equals(id))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No se puede eliminar porque no hay otro administrador a quien reasignar los procesos."));
+
+        // Reasignar procesos
+        if (usuario.getProcesos() != null && !usuario.getProcesos().isEmpty()) {
+            for (com.edu.javeriana.backend.model.Proceso p : usuario.getProcesos()) {
+                p.setAutor(admin);
+                if (admin.getProcesos() != null) admin.getProcesos().add(p);
+            }
+            usuario.getProcesos().clear();
+        }
+
+        // Reasignar historiales
+        if (usuario.getHistoriales() != null && !usuario.getHistoriales().isEmpty()) {
+            for (com.edu.javeriana.backend.model.HistorialProceso h : usuario.getHistoriales()) {
+                h.setUsuario(admin);
+                if (admin.getHistoriales() != null) admin.getHistoriales().add(h);
+            }
+            usuario.getHistoriales().clear();
+        }
+
+        // Si tiene asignaciones de roles en pools, estas sí se borrarán en cascada porque son exclusivas de él.
+
+        usuarioRepository.save(admin);
         usuarioRepository.delete(usuario);
-        log.info("Usuario {} eliminado exitosamente", id);
+        log.info("Usuario {} eliminado exitosamente. Sus procesos fueron reasignados al admin {}", id, admin.getId());
     }
 
     @Override
