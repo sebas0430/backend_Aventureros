@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-
 @Slf4j
 @Service
 public class ProcesoService implements IProcesoService {
@@ -26,7 +25,7 @@ public class ProcesoService implements IProcesoService {
     private static final String USUARIO_NOT_FOUND = "Usuario no encontrado";
     private static final String EDITAR = "EDITAR";
     private static final String ADMINISTRADOR_EMPRESA = "ADMINISTRADOR_EMPRESA";
-    
+
     private final ProcesoRepository procesoRepository;
     private final EmpresaRepository empresaRepository;
     private final UsuarioRepository usuarioRepository;
@@ -37,21 +36,21 @@ public class ProcesoService implements IProcesoService {
     private final ModelMapper modelMapper;
 
     public ProcesoService(ProcesoRepository procesoRepository,
-                          EmpresaRepository empresaRepository,
-                          UsuarioRepository usuarioRepository,
-                          PoolRepository poolRepository,
-                          ProcesoCompartidoRepository procesoCompartidoRepository,
-                          AsignacionRolPoolRepository asignacionRolPoolRepository,
-                          @Lazy IHistorialProcesoService historialProcesoService,
-                          ModelMapper modelMapper) {
-        this.procesoRepository           = procesoRepository;
-        this.empresaRepository           = empresaRepository;
-        this.usuarioRepository           = usuarioRepository;
-        this.poolRepository              = poolRepository;
+            EmpresaRepository empresaRepository,
+            UsuarioRepository usuarioRepository,
+            PoolRepository poolRepository,
+            ProcesoCompartidoRepository procesoCompartidoRepository,
+            AsignacionRolPoolRepository asignacionRolPoolRepository,
+            @Lazy IHistorialProcesoService historialProcesoService,
+            ModelMapper modelMapper) {
+        this.procesoRepository = procesoRepository;
+        this.empresaRepository = empresaRepository;
+        this.usuarioRepository = usuarioRepository;
+        this.poolRepository = poolRepository;
         this.procesoCompartidoRepository = procesoCompartidoRepository;
         this.asignacionRolPoolRepository = asignacionRolPoolRepository;
-        this.historialProcesoService     = historialProcesoService;
-        this.modelMapper                 = modelMapper;
+        this.historialProcesoService = historialProcesoService;
+        this.modelMapper = modelMapper;
     }
 
     // ─── Helper: Proceso → ProcesoRegistroDTO ───────────────────────────────
@@ -62,7 +61,8 @@ public class ProcesoService implements IProcesoService {
         dto.setDefinicionJson(p.getDefinicionJson());
         dto.setEmpresaId(p.getEmpresa().getId());
         dto.setAutorId(p.getAutor().getId());
-        if (p.getPool() != null) dto.setPoolId(p.getPool().getId());
+        if (p.getPool() != null)
+            dto.setPoolId(p.getPool().getId());
         return dto;
     }
 
@@ -84,7 +84,8 @@ public class ProcesoService implements IProcesoService {
         proceso.setEmpresa(empresa);
         proceso.setAutor(autor);
 
-        // Si no mandaron un Pool (contenedor), le asignamos el primero que encontremos de la empresa.
+        // Si no mandaron un Pool (contenedor), le asignamos el primero que encontremos
+        // de la empresa.
         Pool poolAsignado;
         if (dto.getPoolId() != null) {
             poolAsignado = poolRepository.findById(dto.getPoolId())
@@ -182,7 +183,8 @@ public class ProcesoService implements IProcesoService {
 
         StringBuilder cambios = new StringBuilder();
         if (!proceso.getNombre().equals(dto.getNombre())) {
-            cambios.append("Nombre cambiado de '").append(proceso.getNombre()).append("' a '").append(dto.getNombre()).append("'. ");
+            cambios.append("Nombre cambiado de '").append(proceso.getNombre()).append("' a '").append(dto.getNombre())
+                    .append("'. ");
             proceso.setNombre(dto.getNombre());
         }
         if (!proceso.getDescripcion().equals(dto.getDescripcion())) {
@@ -190,7 +192,8 @@ public class ProcesoService implements IProcesoService {
             proceso.setDescripcion(dto.getDescripcion());
         }
         if (!proceso.getCategoria().equals(dto.getCategoria())) {
-            cambios.append("Categoría cambiada de '").append(proceso.getCategoria()).append("' a '").append(dto.getCategoria()).append("'. ");
+            cambios.append("Categoría cambiada de '").append(proceso.getCategoria()).append("' a '")
+                    .append(dto.getCategoria()).append("'. ");
             proceso.setCategoria(dto.getCategoria());
         }
 
@@ -221,7 +224,8 @@ public class ProcesoService implements IProcesoService {
         proceso.setEstado(EstadoProceso.INACTIVO);
         proceso = procesoRepository.save(proceso);
 
-        historialProcesoService.registrarAccion(proceso, usuario, "ELIMINACION", "El proceso fue eliminado (estado cambiado a INACTIVO).");
+        historialProcesoService.registrarAccion(proceso, usuario, "ELIMINACION",
+                "El proceso fue eliminado (estado cambiado a INACTIVO).");
     }
 
     @Override
@@ -256,8 +260,10 @@ public class ProcesoService implements IProcesoService {
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
-        if (!ADMINISTRADOR_EMPRESA.equals(usuario.getRol()) || !usuario.getEmpresa().getId().equals(proceso.getEmpresa().getId()))
-            throw new BusinessRuleException("Solo un administrador global de la empresa dueña puede compartir el proceso");
+        if (!ADMINISTRADOR_EMPRESA.equals(usuario.getRol())
+                || !usuario.getEmpresa().getId().equals(proceso.getEmpresa().getId()))
+            throw new BusinessRuleException(
+                    "Solo un administrador global de la empresa dueña puede compartir el proceso");
 
         Pool poolDestino = poolRepository.findById(dto.getPoolDestinoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Pool destino no encontrado"));
@@ -268,7 +274,8 @@ public class ProcesoService implements IProcesoService {
         procesoCompartidoRepository.save(ProcesoCompartido.builder()
                 .proceso(proceso).poolDestino(poolDestino).permiso(dto.getPermiso()).build());
 
-        historialProcesoService.registrarAccion(proceso, usuario, "COMPARTIR", "Proceso compartido con el Pool ID: " + poolDestino.getId() + " con permiso " + dto.getPermiso().name());
+        historialProcesoService.registrarAccion(proceso, usuario, "COMPARTIR", "Proceso compartido con el Pool ID: "
+                + poolDestino.getId() + " con permiso " + dto.getPermiso().name());
     }
 
     @Override
@@ -280,12 +287,14 @@ public class ProcesoService implements IProcesoService {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
-        if (!ADMINISTRADOR_EMPRESA.equals(usuario.getRol()) || !usuario.getEmpresa().getId().equals(proceso.getEmpresa().getId()))
+        if (!ADMINISTRADOR_EMPRESA.equals(usuario.getRol())
+                || !usuario.getEmpresa().getId().equals(proceso.getEmpresa().getId()))
             throw new BusinessRuleException("Solo un administrador de la empresa dueña puede quitar la compartición");
 
         procesoCompartidoRepository.deleteByProcesoIdAndPoolDestinoId(procesoId, poolDestinoId);
 
-        historialProcesoService.registrarAccion(proceso, usuario, "QUITAR_COMPARTICION", "Se revocó el acceso al proceso para el Pool ID: " + poolDestinoId);
+        historialProcesoService.registrarAccion(proceso, usuario, "QUITAR_COMPARTICION",
+                "Se revocó el acceso al proceso para el Pool ID: " + poolDestinoId);
     }
 
     @Override
@@ -310,17 +319,31 @@ public class ProcesoService implements IProcesoService {
         Usuario solicitante = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
-        if (ADMINISTRADOR_EMPRESA.equals(solicitante.getRol())) return;
+        if (ADMINISTRADOR_EMPRESA.equals(solicitante.getRol()))
+            return;
 
         AsignacionRolPool asignacion = asignacionRolPoolRepository.findByUsuarioIdAndPoolId(usuarioId, poolId)
-                .orElseThrow(() -> new BusinessRuleException("No cuentas con ningún rol asignado en este pool/departamento."));
+                .orElseThrow(() -> new BusinessRuleException(
+                        "No cuentas con ningún rol asignado en este pool/departamento."));
 
         RolPool rol = asignacion.getRol();
         switch (accion) {
-            case "CREAR"    -> { if (!rol.isPermisoCrearProceso())    throw new BusinessRuleException("Tu rol en este pool no permite CREAR procesos"); }
-            case EDITAR   -> { if (!rol.isPermisoEditarProceso())   throw new BusinessRuleException("Tu rol en este pool no permite EDITAR procesos"); }
-            case "ELIMINAR" -> { if (!rol.isPermisoEliminarProceso()) throw new BusinessRuleException("Tu rol en este pool no permite ELIMINAR procesos"); }
-            case "PUBLICAR" -> { if (!rol.isPermisoPublicarProceso()) throw new BusinessRuleException("Tu rol en este pool no permite PUBLICAR procesos"); }
+            case "CREAR" -> {
+                if (!rol.isPermisoCrearProceso())
+                    throw new BusinessRuleException("Tu rol en este pool no permite CREAR procesos");
+            }
+            case EDITAR -> {
+                if (!rol.isPermisoEditarProceso())
+                    throw new BusinessRuleException("Tu rol en este pool no permite EDITAR procesos");
+            }
+            case "ELIMINAR" -> {
+                if (!rol.isPermisoEliminarProceso())
+                    throw new BusinessRuleException("Tu rol en este pool no permite ELIMINAR procesos");
+            }
+            case "PUBLICAR" -> {
+                if (!rol.isPermisoPublicarProceso())
+                    throw new BusinessRuleException("Tu rol en este pool no permite PUBLICAR procesos");
+            }
             default -> throw new IllegalArgumentException("Acción no reconocida: " + accion);
         }
     }
