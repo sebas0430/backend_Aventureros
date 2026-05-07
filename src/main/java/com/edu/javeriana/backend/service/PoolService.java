@@ -10,6 +10,7 @@ import com.edu.javeriana.backend.model.Pool;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.PoolRepository;
 import com.edu.javeriana.backend.service.interfaces.IEmpresaService;
+import com.edu.javeriana.backend.service.interfaces.IRolPoolService;
 import com.edu.javeriana.backend.service.interfaces.IUsuarioService;
 import org.springframework.context.annotation.Lazy;
 import lombok.extern.slf4j.Slf4j;
@@ -29,15 +30,18 @@ public class PoolService implements IPoolService {
     private final PoolRepository poolRepository;
     private final IEmpresaService empresaService;
     private final IUsuarioService usuarioService;
+    private final IRolPoolService rolPoolService;
     private final ModelMapper modelMapper;
 
     public PoolService(PoolRepository poolRepository,
                        @Lazy IEmpresaService empresaService,
                        @Lazy IUsuarioService usuarioService,
+                       @Lazy IRolPoolService rolPoolService,
                        ModelMapper modelMapper) {
         this.poolRepository    = poolRepository;
         this.empresaService    = empresaService;
         this.usuarioService    = usuarioService;
+        this.rolPoolService    = rolPoolService;
         this.modelMapper       = modelMapper;
     }
 
@@ -59,6 +63,9 @@ public class PoolService implements IPoolService {
 
         // Lo guardamos en la base de datos.
         Pool guardado = poolRepository.save(pool);
+
+        // Creamos los roles por defecto para este nuevo pool
+        rolPoolService.crearRolesPredeterminados(guardado);
 
         log.info("AUDITORIA: Usuario {} (ADMIN) registró el Nuevo Pool '{}' (ID={}) para la Empresa ID={}",
                 dto.getUsuarioId(), guardado.getNombre(), guardado.getId(), empresa.getId());

@@ -2,6 +2,7 @@ package com.edu.javeriana.backend.service.interfaces;
 
 import com.edu.javeriana.backend.dto.AsignacionRolDTO;
 import com.edu.javeriana.backend.dto.RolPoolRegistroDTO;
+import com.edu.javeriana.backend.model.Pool;
 
 import java.util.List;
 
@@ -20,4 +21,6 @@ public interface IRolPoolService {
     void desasignarRolAUsuario(Long usuarioDestinoId, Long poolId, Long usuarioId);
 
     AsignacionRolDTO obtenerAsignacionUsuario(Long usuarioDestinoId, Long poolId);
+
+    void crearRolesPredeterminados(Pool pool);
 }

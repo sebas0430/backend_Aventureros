@@ -122,7 +122,7 @@ public class RolPoolService implements IRolPoolService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public List<RolPoolRegistroDTO> listarRolesPorPool(Long poolId, Long usuarioId) {
         Pool pool = poolService.obtenerPoolEntity(poolId);
 
@@ -132,9 +132,27 @@ public class RolPoolService implements IRolPoolService {
             throw new BusinessRuleException("Permiso denegado: La empresa no coincide.");
         }
 
-        return rolPoolRepository.findByPoolId(poolId)
-                .stream()
+        List<RolPool> roles = rolPoolRepository.findByPoolId(poolId);
+
+        // Si no hay roles (Pool antiguo o error en creación), creamos los de por defecto
+        if (roles.isEmpty()) {
+            log.info("El Pool ID={} no tiene roles. Creando predeterminados...", poolId);
+            crearRolesPredeterminados(pool);
+            roles = rolPoolRepository.findByPoolId(poolId);
+        }
+
+        return roles.stream()
                 .map(r -> {
+                    String nombreEsperado = "Administrador " + pool.getNombre();
+                    if (r.isPermisoGestionarRoles() && !nombreEsperado.equals(r.getNombre())) {
+                        if ("Administrador".equals(r.getNombre()) || 
+                            "Administrador del Pool".equals(r.getNombre()) || 
+                            pool.getNombre().equals(r.getNombre())) {
+                            
+                            r.setNombre(nombreEsperado);
+                            rolPoolRepository.save(r);
+                        }
+                    }
                     RolPoolRegistroDTO dto = modelMapper.map(r, RolPoolRegistroDTO.class);
                     dto.setPoolId(r.getPool().getId());
                     return dto;
@@ -212,6 +230,50 @@ public class RolPoolService implements IRolPoolService {
                     return dto;
                 })
                 .orElse(null);
+    }
+
+    @Override
+    @Transactional
+    public void crearRolesPredeterminados(Pool pool) {
+        log.info("Creando roles predeterminados para el Pool ID={}", pool.getId());
+
+        // 1. Administrador
+        RolPool admin = RolPool.builder()
+                .nombre("Administrador" + " " + pool.getNombre())
+                .descripcion("Tiene control total sobre los procesos y roles dentro de este departamento.")
+                .pool(pool)
+                .permisoCrearProceso(true)
+                .permisoEditarProceso(true)
+                .permisoEliminarProceso(true)
+                .permisoPublicarProceso(true)
+                .permisoGestionarRoles(true)
+                .build();
+
+        // 2. Editor
+        RolPool editor = RolPool.builder()
+                .nombre("Editor")
+                .descripcion("Puede crear y editar procesos, pero no puede eliminarlos ni gestionar roles.")
+                .pool(pool)
+                .permisoCrearProceso(true)
+                .permisoEditarProceso(true)
+                .permisoEliminarProceso(false)
+                .permisoPublicarProceso(true)
+                .permisoGestionarRoles(false)
+                .build();
+
+        // 3. Lector
+        RolPool lector = RolPool.builder()
+                .nombre("Lector")
+                .descripcion("Solo puede visualizar los procesos de este departamento.")
+                .pool(pool)
+                .permisoCrearProceso(false)
+                .permisoEditarProceso(false)
+                .permisoEliminarProceso(false)
+                .permisoPublicarProceso(false)
+                .permisoGestionarRoles(false)
+                .build();
+
+        rolPoolRepository.saveAll(List.of(admin, editor, lector));
     }
 
     private void validarPermisoGestionRoles(Long usuarioId, Pool pool) {
