@@ -10,9 +10,12 @@ import com.edu.javeriana.backend.repository.DocumentoRepository;
 import com.edu.javeriana.backend.service.interfaces.IProcesoService;
 import org.springframework.context.annotation.Lazy;
 import org.modelmapper.ModelMapper;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import java.net.MalformedURLException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -171,4 +174,26 @@ public DocumentoDTO actualizarDocumento(Long documentoId, MultipartFile archivo)
         throw new FileOperationException("Error al actualizar el archivo", e);
     }
 }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Resource descargarDocumento(Long documentoId) {
+        Documento documento = documentoRepository.findById(documentoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Documento no encontrado"));
+
+        try {
+            Path filePath = Paths.get(documento.getRutaArchivo()).normalize();
+            Resource resource = new UrlResource(filePath.toUri());
+
+            if (resource.exists() && resource.isReadable()) {
+                return resource;
+            } else {
+                throw new FileOperationException("No se puede leer el archivo o no existe: " + documento.getNombreArchivo());
+            }
+        } catch (MalformedURLException e) {
+            log.error("Error al formar la URL del archivo: {}", e.getMessage(), e);
+            throw new FileOperationException("Error al leer el archivo", e);
+        }
+    }
 }
+

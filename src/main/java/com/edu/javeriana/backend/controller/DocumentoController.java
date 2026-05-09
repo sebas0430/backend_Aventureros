@@ -7,6 +7,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
 import java.util.List;
 import java.util.Map;
@@ -48,5 +51,19 @@ public class DocumentoController {
     public ResponseEntity<Map<String, String>> eliminarDocumento(@PathVariable Long id) {
         documentoService.eliminarDocumento(id);
         return ResponseEntity.ok(Map.of("mensaje", "Documento eliminado exitosamente"));
+    }
+
+    // Descarga el documento físico.
+    @GetMapping("/{id}/descargar")
+    public ResponseEntity<Resource> descargarDocumento(@PathVariable Long id) {
+        Resource recurso = documentoService.descargarDocumento(id);
+        
+        String contentType = "application/octet-stream";
+        String headerValue = "attachment; filename=\"" + recurso.getFilename() + "\"";
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, headerValue)
+                .body(recurso);
     }
 }
