@@ -8,6 +8,8 @@ import lombok.Data;
 @Data
 public class ActividadEdicionDTO {
 
+    private Long id;
+
     @NotBlank(message = "El nombre de la actividad es obligatorio")
     private String nombre;
 
