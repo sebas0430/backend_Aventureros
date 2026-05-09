@@ -2,10 +2,15 @@ package com.edu.javeriana.backend.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ProcesoEdicionDTO {
+    private Long id;
 
     @NotBlank(message = "El nombre del proceso es obligatorio")
     private String nombre;

@@ -111,7 +111,7 @@ public class ProcesoService implements IProcesoService {
     @Override
     @Transactional(readOnly = true)
     public List<ProcesoRegistroDTO> listarPorEmpresa(Long empresaId) {
-        return procesoRepository.findByEmpresaId(empresaId)
+        return procesoRepository.findByEmpresaIdActive(empresaId)
                 .stream()
                 .map(this::toRegistroDTO)
                 .toList();
@@ -120,7 +120,7 @@ public class ProcesoService implements IProcesoService {
     @Override
     @Transactional(readOnly = true)
     public List<ProcesoRegistroDTO> listarPorAutor(Long autorId) {
-        return procesoRepository.findByAutorId(autorId)
+        return procesoRepository.findByAutorIdActive(autorId)
                 .stream()
                 .map(this::toRegistroDTO)
                 .toList();
@@ -170,16 +170,21 @@ public class ProcesoService implements IProcesoService {
         Proceso proceso = procesoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(PROCESO_NOT_FOUND));
 
-        validarPermisoDeRol(dto.getUsuarioId(), proceso.getPool().getId(), EDITAR);
-
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
+        // Permitimos editar si: es Admin Global, es el Autor, o tiene el permiso EDITAR en el pool.
         boolean esAutor = proceso.getAutor().getId().equals(usuario.getId());
         boolean esAdmin = ADMINISTRADOR_EMPRESA.equals(usuario.getRol());
-
-        if (!esAutor && !esAdmin)
-            throw new BusinessRuleException("No tienes permisos para editar este proceso.");
+        
+        try {
+            validarPermisoDeRol(usuario.getId(), proceso.getPool().getId(), EDITAR);
+        } catch (BusinessRuleException e) {
+            // Si no tiene el permiso por rol, pero es el autor o admin, le permitimos.
+            if (!esAutor && !esAdmin) {
+                throw new BusinessRuleException("No tienes permisos para editar este proceso.");
+            }
+        }
 
         StringBuilder cambios = new StringBuilder();
         if (!proceso.getNombre().equals(dto.getNombre())) {
@@ -203,6 +208,7 @@ public class ProcesoService implements IProcesoService {
         }
 
         ProcesoEdicionDTO response = modelMapper.map(proceso, ProcesoEdicionDTO.class);
+        response.setId(proceso.getId());
         response.setUsuarioId(dto.getUsuarioId());
         return response;
     }
@@ -221,11 +227,14 @@ public class ProcesoService implements IProcesoService {
         if (!ADMINISTRADOR_EMPRESA.equals(usuario.getRol()))
             throw new BusinessRuleException("Solo un administrador puede eliminar procesos.");
 
+        if (proceso.getEstado() == EstadoProceso.INACTIVO)
+            throw new BusinessRuleException("El proceso ya se encuentra inactivo.");
+
         proceso.setEstado(EstadoProceso.INACTIVO);
         proceso = procesoRepository.save(proceso);
 
         historialProcesoService.registrarAccion(proceso, usuario, "ELIMINACION",
-                "El proceso fue eliminado (estado cambiado a INACTIVO).");
+                "El proceso fue marcado como INACTIVO por el administrador " + usuario.getUsername() + " para mantener trazabilidad.");
     }
 
     @Override
@@ -247,6 +256,7 @@ public class ProcesoService implements IProcesoService {
         Proceso actualizado = procesoRepository.save(proceso);
 
         ProcesoEdicionDTO response = modelMapper.map(actualizado, ProcesoEdicionDTO.class);
+        response.setId(actualizado.getId());
         response.setUsuarioId(usuarioId);
         return response;
     }
