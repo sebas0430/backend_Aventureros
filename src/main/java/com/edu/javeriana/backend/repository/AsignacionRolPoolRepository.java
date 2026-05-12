@@ -17,4 +17,6 @@ public interface AsignacionRolPoolRepository extends JpaRepository<AsignacionRol
     List<AsignacionRolPool> findByRolId(Long rolId);
     
     boolean existsByRolId(Long rolId);
+
+    List<AsignacionRolPool> findByUsuarioId(Long usuarioId);
 }

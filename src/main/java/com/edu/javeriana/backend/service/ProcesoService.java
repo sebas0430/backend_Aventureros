@@ -84,17 +84,28 @@ public class ProcesoService implements IProcesoService {
         proceso.setEmpresa(empresa);
         proceso.setAutor(autor);
 
-        // Si no mandaron un Pool (contenedor), le asignamos el primero que encontremos
-        // de la empresa.
+        // Si no mandaron un Pool, buscamos el pool donde el autor tiene permiso de crear.
+        // Si es ADMINISTRADOR_EMPRESA global, tomamos el primero de la empresa.
         Pool poolAsignado;
         if (dto.getPoolId() != null) {
             poolAsignado = poolRepository.findById(dto.getPoolId())
                     .orElseThrow(() -> new IllegalArgumentException("Pool no encontrado"));
             if (!poolAsignado.getEmpresa().getId().equals(empresa.getId()))
                 throw new IllegalArgumentException("El pool no pertenece a la misma empresa");
-        } else {
+        } else if (ADMINISTRADOR_EMPRESA.equals(autor.getRol())) {
+            // Admin global: usa el primer pool de la empresa
             poolAsignado = poolRepository.findFirstByEmpresaIdOrderByIdAsc(empresa.getId())
                     .orElseThrow(() -> new IllegalArgumentException("La empresa no tiene ningún pool configurado"));
+        } else {
+            // Buscar el primer pool donde el usuario tiene permiso de crear
+            poolAsignado = asignacionRolPoolRepository.findByUsuarioId(autor.getId())
+                    .stream()
+                    .filter(a -> a.getRol().isPermisoCrearProceso()
+                            && a.getPool().getEmpresa().getId().equals(empresa.getId()))
+                    .map(a -> a.getPool())
+                    .findFirst()
+                    .orElseThrow(() -> new BusinessRuleException(
+                            "No tienes permiso de CREAR procesos en ningún departamento de esta empresa."));
         }
         proceso.setPool(poolAsignado);
 

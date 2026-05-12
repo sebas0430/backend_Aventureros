@@ -7,10 +7,12 @@ import com.edu.javeriana.backend.exception.BusinessRuleException;
 import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.model.AsignacionRolPool;
 import com.edu.javeriana.backend.model.Pool;
+import com.edu.javeriana.backend.model.RolGlobal;
 import com.edu.javeriana.backend.model.RolPool;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.AsignacionRolPoolRepository;
 import com.edu.javeriana.backend.repository.RolPoolRepository;
+import com.edu.javeriana.backend.repository.UsuarioRepository;
 import com.edu.javeriana.backend.service.interfaces.IPoolService;
 import com.edu.javeriana.backend.service.interfaces.IUsuarioService;
 import org.springframework.context.annotation.Lazy;
@@ -30,17 +32,20 @@ public class RolPoolService implements IRolPoolService {
     private final AsignacionRolPoolRepository asignacionRolPoolRepository;
     private final IPoolService poolService;
     private final IUsuarioService usuarioService;
+    private final UsuarioRepository usuarioRepository;
     private final ModelMapper modelMapper;
 
     public RolPoolService(RolPoolRepository rolPoolRepository,
                           AsignacionRolPoolRepository asignacionRolPoolRepository,
                           @Lazy IPoolService poolService,
                           @Lazy IUsuarioService usuarioService,
+                          UsuarioRepository usuarioRepository,
                           ModelMapper modelMapper) {
         this.rolPoolRepository           = rolPoolRepository;
         this.asignacionRolPoolRepository = asignacionRolPoolRepository;
         this.poolService                 = poolService;
         this.usuarioService              = usuarioService;
+        this.usuarioRepository           = usuarioRepository;
         this.modelMapper                 = modelMapper;
     }
 
@@ -190,6 +195,17 @@ public class RolPoolService implements IRolPoolService {
         asignacion.setPool(pool);
 
         AsignacionRolPool guardada = asignacionRolPoolRepository.save(asignacion);
+
+        // Derivar y actualizar el RolGlobal del usuario según los permisos del RolPool asignado.
+        // Si el usuario ya es ADMINISTRADOR_EMPRESA global, no lo tocamos.
+        if (!RolGlobal.ADMINISTRADOR_EMPRESA.name().equals(destinatario.getRol())) {
+            String rolGlobalDerivado = derivarRolGlobal(rol);
+            destinatario.setRol(rolGlobalDerivado);
+            usuarioRepository.save(destinatario);
+            log.info("AUDITORIA: RolGlobal del usuario {} actualizado a '{}' por asignación del rol '{}' en pool ID={}",
+                    destinatario.getId(), rolGlobalDerivado, rol.getNombre(), pool.getId());
+        }
+
         log.info("AUDITORIA: Usuario {} le asignó el rol '{}' al usuario {} en el pool ID={}",
                 dto.getUsuarioId(), rol.getNombre(), destinatario.getId(), pool.getId());
 
@@ -212,6 +228,15 @@ public class RolPoolService implements IRolPoolService {
                 .findByUsuarioIdAndPoolId(usuarioDestinoId, poolId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "El usuario destino no tiene un rol en este pool"));
+
+        // Al quitar el rol, revertir al usuario a SOLO_LECTURA (a menos que sea admin global)
+        Usuario destinatario = asignacion.getUsuario();
+        if (!RolGlobal.ADMINISTRADOR_EMPRESA.name().equals(destinatario.getRol())) {
+            destinatario.setRol(RolGlobal.SOLO_LECTURA.name());
+            usuarioRepository.save(destinatario);
+            log.info("AUDITORIA: RolGlobal del usuario {} revertido a SOLO_LECTURA por desasignación en pool ID={}",
+                    usuarioDestinoId, poolId);
+        }
 
         asignacionRolPoolRepository.delete(asignacion);
         log.info("AUDITORIA: Usuario {} desasignó rol al usuario {} en el pool ID={}",
@@ -274,6 +299,24 @@ public class RolPoolService implements IRolPoolService {
                 .build();
 
         rolPoolRepository.saveAll(List.of(admin, editor, lector));
+    }
+
+    /**
+     * Deriva el RolGlobal que debe tener un usuario según los permisos de su RolPool.
+     *
+     * Regla:
+     *   permisoGestionarRoles = true  → ADMINISTRADOR_EMPRESA
+     *   permisoCrearProceso   = true  → EDITOR
+     *   sin permisos activos         → SOLO_LECTURA
+     */
+    private String derivarRolGlobal(RolPool rol) {
+        if (rol.isPermisoGestionarRoles()) {
+            return RolGlobal.ADMINISTRADOR_EMPRESA.name();
+        }
+        if (rol.isPermisoCrearProceso() || rol.isPermisoEditarProceso() || rol.isPermisoPublicarProceso()) {
+            return RolGlobal.EDITOR.name();
+        }
+        return RolGlobal.SOLO_LECTURA.name();
     }
 
     private void validarPermisoGestionRoles(Long usuarioId, Pool pool) {
