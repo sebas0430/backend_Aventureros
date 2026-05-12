@@ -15,12 +15,11 @@ import org.springframework.context.annotation.Lazy;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.crypto.password.PasswordEncoder;  // ← Agrega este import
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
-
-
 
 @Slf4j
 @Service
@@ -32,15 +31,19 @@ public class EmpresaService implements IEmpresaService {
     private final IUsuarioService usuarioService;
     private final IPoolService poolService;
     private final ModelMapper modelMapper;
+    private final PasswordEncoder passwordEncoder;  
 
+    
     public EmpresaService(EmpresaRepository empresaRepository,
                           @Lazy IUsuarioService usuarioService,
                           @Lazy IPoolService poolService,
-                          ModelMapper modelMapper) {
+                          ModelMapper modelMapper,
+                          PasswordEncoder passwordEncoder) {
         this.empresaRepository = empresaRepository;
         this.usuarioService    = usuarioService;
         this.poolService       = poolService;
         this.modelMapper       = modelMapper;
+        this.passwordEncoder   = passwordEncoder;  
     }
 
     @Override
@@ -65,7 +68,8 @@ public class EmpresaService implements IEmpresaService {
         // De una vez le creamos su usuario Administrador para que pueda entrar.
         Usuario admin = new Usuario();
         admin.setUsername(dto.getCorreoContacto());
-        admin.setPasswordHash(dto.getPasswordAdmin()); // Aquí se guarda la clave del jefe.
+        // Encripta la contraseña
+        admin.setPasswordHash(passwordEncoder.encode(dto.getPasswordAdmin())); // ¡AHORA SÍ ENCRIPTADA!
         admin.setRol("ADMINISTRADOR_EMPRESA");
         admin.setActivo(true);
         admin.setEmpresa(guardada);
