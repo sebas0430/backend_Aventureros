@@ -6,6 +6,7 @@ import com.edu.javeriana.backend.model.Empresa;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.UsuarioRepository;
 import com.edu.javeriana.backend.service.interfaces.IEmpresaService;
+import com.edu.javeriana.backend.config.JwtUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,6 +40,9 @@ class UsuarioServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private JwtUtils jwtUtils;
 
     @InjectMocks
     private UsuarioService usuarioService;
@@ -90,6 +94,7 @@ class UsuarioServiceTest {
     void iniciarSesion_Exitoso() {
         when(usuarioRepository.findByUsername("test@test.com")).thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+        when(jwtUtils.generateToken(any(), any(), any())).thenReturn("token");
         
         UsuarioLoginDTO loginDto = new UsuarioLoginDTO();
         loginDto.setCorreo("test@test.com");
@@ -153,7 +158,15 @@ class UsuarioServiceTest {
 
     @Test
     void eliminarUsuario() {
+        Usuario admin = new Usuario();
+        admin.setId(2L);
+        admin.setUsername("admin2@test.com");
+        admin.setRol("ADMINISTRADOR_EMPRESA");
+        admin.setEmpresa(empresa);
+
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.findByEmpresaIdAndRol(1L, "ADMINISTRADOR_EMPRESA")).thenReturn(List.of(usuario, admin));
+
         usuarioService.eliminarUsuario(1L);
         verify(usuarioRepository).delete(usuario);
     }

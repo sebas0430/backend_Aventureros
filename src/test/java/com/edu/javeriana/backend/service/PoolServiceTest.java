@@ -10,6 +10,7 @@ import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.PoolRepository;
 import com.edu.javeriana.backend.service.interfaces.IEmpresaService;
 import com.edu.javeriana.backend.service.interfaces.IUsuarioService;
+import com.edu.javeriana.backend.service.interfaces.IRolPoolService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +37,9 @@ class PoolServiceTest {
 
     @Mock
     private IUsuarioService usuarioService;
+
+    @Mock
+    private IRolPoolService rolPoolService;
 
     @Mock
     private ModelMapper modelMapper;

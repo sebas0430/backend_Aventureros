@@ -158,7 +158,7 @@ class ProcesoServiceTest {
 
     @Test
     void listarPorEmpresa() {
-        when(procesoRepository.findByEmpresaId(1L)).thenReturn(List.of(proceso));
+        when(procesoRepository.findByEmpresaIdActive(1L)).thenReturn(List.of(proceso));
         when(modelMapper.map(any(), eq(ProcesoRegistroDTO.class))).thenReturn(new ProcesoRegistroDTO());
 
         List<ProcesoRegistroDTO> list = procesoService.listarPorEmpresa(1L);

@@ -10,6 +10,7 @@ import com.edu.javeriana.backend.model.RolPool;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.AsignacionRolPoolRepository;
 import com.edu.javeriana.backend.repository.RolPoolRepository;
+import com.edu.javeriana.backend.repository.UsuarioRepository;
 import com.edu.javeriana.backend.service.interfaces.IPoolService;
 import com.edu.javeriana.backend.service.interfaces.IUsuarioService;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,8 @@ class RolPoolServiceTest {
     private IPoolService poolService;
     @Mock
     private IUsuarioService usuarioService;
+    @Mock
+    private UsuarioRepository usuarioRepository;
     @Mock
     private ModelMapper modelMapper;
 
@@ -123,6 +126,7 @@ class RolPoolServiceTest {
 
         Usuario destino = new Usuario();
         destino.setId(2L);
+        destino.setRol("EDITOR");
         destino.setEmpresa(empresa);
 
         when(poolService.obtenerPoolEntity(1L)).thenReturn(pool);
@@ -144,9 +148,18 @@ class RolPoolServiceTest {
 
     @Test
     void desasignarRol_Exitoso() {
+        Usuario destino = new Usuario();
+        destino.setId(2L);
+        destino.setRol("EDITOR");
+
+        AsignacionRolPool asignacion = new AsignacionRolPool();
+        asignacion.setUsuario(destino);
+        asignacion.setRol(rol);
+        asignacion.setPool(pool);
+
         when(poolService.obtenerPoolEntity(1L)).thenReturn(pool);
         when(usuarioService.obtenerUsuarioEntity(1L)).thenReturn(adminUsuario);
-        when(asignacionRolPoolRepository.findByUsuarioIdAndPoolId(2L, 1L)).thenReturn(Optional.of(new AsignacionRolPool()));
+        when(asignacionRolPoolRepository.findByUsuarioIdAndPoolId(2L, 1L)).thenReturn(Optional.of(asignacion));
 
         rolPoolService.desasignarRolAUsuario(2L, 1L, 1L);
         verify(asignacionRolPoolRepository).delete(any());
