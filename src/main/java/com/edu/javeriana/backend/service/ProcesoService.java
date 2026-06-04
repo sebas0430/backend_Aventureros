@@ -84,7 +84,8 @@ public class ProcesoService implements IProcesoService {
         proceso.setEmpresa(empresa);
         proceso.setAutor(autor);
 
-        // Si no mandaron un Pool, buscamos el pool donde el autor tiene permiso de crear.
+        // Si no mandaron un Pool, buscamos el pool donde el autor tiene permiso de
+        // crear.
         // Si es ADMINISTRADOR_EMPRESA global, tomamos el primero de la empresa.
         Pool poolAsignado;
         if (dto.getPoolId() != null) {
@@ -184,10 +185,11 @@ public class ProcesoService implements IProcesoService {
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
-        // Permitimos editar si: es Admin Global, es el Autor, o tiene el permiso EDITAR en el pool.
+        // Permitimos editar si: es Admin Global, es el Autor, o tiene el permiso EDITAR
+        // en el pool.
         boolean esAutor = proceso.getAutor().getId().equals(usuario.getId());
         boolean esAdmin = ADMINISTRADOR_EMPRESA.equals(usuario.getRol());
-        
+
         try {
             validarPermisoDeRol(usuario.getId(), proceso.getPool().getId(), EDITAR);
         } catch (BusinessRuleException e) {
@@ -245,7 +247,8 @@ public class ProcesoService implements IProcesoService {
         proceso = procesoRepository.save(proceso);
 
         historialProcesoService.registrarAccion(proceso, usuario, "ELIMINACION",
-                "El proceso fue marcado como INACTIVO por el administrador " + usuario.getUsername() + " para mantener trazabilidad.");
+                "El proceso fue marcado como INACTIVO por el administrador " + usuario.getUsername()
+                        + " para mantener trazabilidad.");
     }
 
     @Override
@@ -381,8 +384,10 @@ public class ProcesoService implements IProcesoService {
 
     /**
      * Devuelve los procesos visibles para un usuario:
-     * 1. Procesos propios del pool donde el usuario tiene un rol asignado (compartido=false)
-     * 2. Procesos compartidos con ese pool desde otros pools (compartido=true, solo lectura)
+     * 1. Procesos propios del pool donde el usuario tiene un rol asignado
+     * (compartido=false)
+     * 2. Procesos compartidos con ese pool desde otros pools (compartido=true, solo
+     * lectura)
      * Si el usuario es ADMINISTRADOR_EMPRESA global, ve todos los de la empresa.
      */
     @Override
@@ -393,8 +398,11 @@ public class ProcesoService implements IProcesoService {
 
         EstadoProceso estado = null;
         if (estadoStr != null && !estadoStr.isBlank()) {
-            try { estado = EstadoProceso.valueOf(estadoStr.toUpperCase()); }
-            catch (IllegalArgumentException e) { throw new IllegalArgumentException("Estado no válido"); }
+            try {
+                estado = EstadoProceso.valueOf(estadoStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Estado no válido");
+            }
         }
 
         // Admin global: ve todo sin restricción de pool
@@ -410,7 +418,8 @@ public class ProcesoService implements IProcesoService {
                 .map(a -> a.getPool().getId())
                 .toList();
 
-        if (poolsDelUsuario.isEmpty()) return List.of();
+        if (poolsDelUsuario.isEmpty())
+            return List.of();
 
         // 1. Procesos propios del pool (compartido = false)
         final EstadoProceso estadoFinal = estado;
@@ -418,7 +427,11 @@ public class ProcesoService implements IProcesoService {
                 .buscarConFiltros(empresaId, estadoFinal, null)
                 .stream()
                 .filter(p -> p.getPool() != null && poolsDelUsuario.contains(p.getPool().getId()))
-                .map(p -> { ProcesoRegistroDTO dto = toRegistroDTO(p); dto.setCompartido(false); return dto; })
+                .map(p -> {
+                    ProcesoRegistroDTO dto = toRegistroDTO(p);
+                    dto.setCompartido(false);
+                    return dto;
+                })
                 .toList();
 
         // 2. Procesos compartidos con los pools del usuario (compartido = true)
@@ -429,7 +442,11 @@ public class ProcesoService implements IProcesoService {
                 .filter(p -> estadoFinal == null || p.getEstado() == estadoFinal)
                 // Excluir los que ya son propios
                 .filter(p -> propios.stream().noneMatch(own -> own.getId().equals(p.getId())))
-                .map(p -> { ProcesoRegistroDTO dto = toRegistroDTO(p); dto.setCompartido(true); return dto; })
+                .map(p -> {
+                    ProcesoRegistroDTO dto = toRegistroDTO(p);
+                    dto.setCompartido(true);
+                    return dto;
+                })
                 .toList();
 
         List<ProcesoRegistroDTO> resultado = new java.util.ArrayList<>(propios);

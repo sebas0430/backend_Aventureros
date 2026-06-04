@@ -40,7 +40,8 @@ class ProcesoControllerTest {
         dto.setNombre("Proceso X");
         Mockito.when(procesoService.crearProceso(any())).thenReturn(dto);
 
-        ResponseEntity<ProcesoRegistroDTO> response = (ResponseEntity<ProcesoRegistroDTO>) procesoController.crearProceso(dto);
+        ResponseEntity<ProcesoRegistroDTO> response = (ResponseEntity<ProcesoRegistroDTO>) procesoController
+                .crearProceso(dto);
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertEquals("Proceso X", response.getBody().getNombre());
     }
@@ -54,7 +55,8 @@ class ProcesoControllerTest {
 
     @Test
     void listarPorEmpresaConFiltros() {
-        Mockito.when(procesoService.filtrarProcesos(eq(1L), anyString(), anyString())).thenReturn(Collections.emptyList());
+        Mockito.when(procesoService.filtrarProcesos(eq(1L), anyString(), anyString()))
+                .thenReturn(Collections.emptyList());
         ResponseEntity<List<ProcesoRegistroDTO>> response = procesoController.listarPorEmpresa(1L, "ACTIVO", "CAT");
         assertEquals(HttpStatus.OK, response.getStatusCode());
     }
@@ -82,7 +84,8 @@ class ProcesoControllerTest {
         Map<String, String> body = new HashMap<>();
         body.put("definicionJson", "{}");
 
-        ResponseEntity<ProcesoEdicionDTO> response = (ResponseEntity<ProcesoEdicionDTO>) procesoController.actualizarDefinicion(1L, body);
+        ResponseEntity<ProcesoEdicionDTO> response = (ResponseEntity<ProcesoEdicionDTO>) procesoController
+                .actualizarDefinicion(1L, body);
         assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 
