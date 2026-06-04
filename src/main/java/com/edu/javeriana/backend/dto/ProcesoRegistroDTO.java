@@ -30,4 +30,7 @@ public class ProcesoRegistroDTO {
     private Long autorId;
 
     private Long poolId; // Opcional: Si no se manda, irá al pool por defecto de la empresa
+
+    // true = el proceso pertenece a otro pool y fue compartido con el usuario (solo lectura)
+    private boolean compartido = false;
 }

@@ -36,4 +36,6 @@ public interface IProcesoService {
     com.edu.javeriana.backend.model.Proceso obtenerProcesoEntity(Long id);
 
     boolean existeProceso(Long id);
+
+    List<ProcesoRegistroDTO> listarProcesosPorUsuario(Long usuarioId, Long empresaId, String estado);
 }

@@ -68,4 +68,11 @@ public class UsuarioController {
         usuarioService.eliminarUsuario(id);
         return ResponseEntity.ok(Map.of("mensaje", "Usuario eliminado exitosamente"));
     }
+
+    // Renovar el token JWT cuando está por vencer.
+    @PostMapping("/refresh")
+    public ResponseEntity<UsuarioLoginDTO> renovarToken(@RequestBody Map<String, String> body) {
+        String token = body.get("token");
+        return ResponseEntity.ok(usuarioService.renovarToken(token));
+    }
 }

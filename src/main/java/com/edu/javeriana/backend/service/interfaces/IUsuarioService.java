@@ -24,4 +24,6 @@ public interface IUsuarioService {
     com.edu.javeriana.backend.model.Usuario guardarUsuarioEntity(com.edu.javeriana.backend.model.Usuario usuario);
 
     com.edu.javeriana.backend.model.Usuario obtenerUsuarioEntity(Long id);
+
+    UsuarioLoginDTO renovarToken(String tokenViejo);
 }

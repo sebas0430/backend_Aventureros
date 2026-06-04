@@ -260,9 +260,6 @@ public class ProcesoService implements IProcesoService {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
-        if (nuevoEstado == EstadoProceso.PUBLICADO && !ADMINISTRADOR_EMPRESA.equals(usuario.getRol()))
-            throw new BusinessRuleException("Solo un administrador puede publicar procesos.");
-
         proceso.setEstado(nuevoEstado);
         Proceso actualizado = procesoRepository.save(proceso);
 
@@ -380,5 +377,63 @@ public class ProcesoService implements IProcesoService {
     @Transactional(readOnly = true)
     public boolean existeProceso(Long id) {
         return procesoRepository.existsById(id);
+    }
+
+    /**
+     * Devuelve los procesos visibles para un usuario:
+     * 1. Procesos propios del pool donde el usuario tiene un rol asignado (compartido=false)
+     * 2. Procesos compartidos con ese pool desde otros pools (compartido=true, solo lectura)
+     * Si el usuario es ADMINISTRADOR_EMPRESA global, ve todos los de la empresa.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProcesoRegistroDTO> listarProcesosPorUsuario(Long usuarioId, Long empresaId, String estadoStr) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
+
+        EstadoProceso estado = null;
+        if (estadoStr != null && !estadoStr.isBlank()) {
+            try { estado = EstadoProceso.valueOf(estadoStr.toUpperCase()); }
+            catch (IllegalArgumentException e) { throw new IllegalArgumentException("Estado no válido"); }
+        }
+
+        // Admin global: ve todo sin restricción de pool
+        if (ADMINISTRADOR_EMPRESA.equals(usuario.getRol())) {
+            return procesoRepository.buscarConFiltros(empresaId, estado, null)
+                    .stream().map(this::toRegistroDTO).toList();
+        }
+
+        // Obtener los pools del usuario
+        List<Long> poolsDelUsuario = asignacionRolPoolRepository.findByUsuarioId(usuarioId)
+                .stream()
+                .filter(a -> a.getPool().getEmpresa().getId().equals(empresaId))
+                .map(a -> a.getPool().getId())
+                .toList();
+
+        if (poolsDelUsuario.isEmpty()) return List.of();
+
+        // 1. Procesos propios del pool (compartido = false)
+        final EstadoProceso estadoFinal = estado;
+        List<ProcesoRegistroDTO> propios = procesoRepository
+                .buscarConFiltros(empresaId, estadoFinal, null)
+                .stream()
+                .filter(p -> p.getPool() != null && poolsDelUsuario.contains(p.getPool().getId()))
+                .map(p -> { ProcesoRegistroDTO dto = toRegistroDTO(p); dto.setCompartido(false); return dto; })
+                .toList();
+
+        // 2. Procesos compartidos con los pools del usuario (compartido = true)
+        List<ProcesoRegistroDTO> compartidos = poolsDelUsuario.stream()
+                .flatMap(poolId -> procesoCompartidoRepository.findByPoolDestinoId(poolId).stream())
+                .map(ProcesoCompartido::getProceso)
+                .distinct()
+                .filter(p -> estadoFinal == null || p.getEstado() == estadoFinal)
+                // Excluir los que ya son propios
+                .filter(p -> propios.stream().noneMatch(own -> own.getId().equals(p.getId())))
+                .map(p -> { ProcesoRegistroDTO dto = toRegistroDTO(p); dto.setCompartido(true); return dto; })
+                .toList();
+
+        List<ProcesoRegistroDTO> resultado = new java.util.ArrayList<>(propios);
+        resultado.addAll(compartidos);
+        return resultado;
     }
 }

@@ -173,4 +173,24 @@ public class ProcesoController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
+
+    /**
+     * Devuelve los procesos visibles para un usuario concreto:
+     * - Propios del pool (compartido=false, editables)
+     * - Compartidos con su pool (compartido=true, solo lectura)
+     * GET /api/procesos/mis-procesos?usuarioId=1&empresaId=1&estado=BORRADOR
+     */
+    @GetMapping("/mis-procesos")
+    public ResponseEntity<?> listarProcesosPorUsuario(
+            @RequestParam Long usuarioId,
+            @RequestParam Long empresaId,
+            @RequestParam(required = false) String estado) {
+        try {
+            return ResponseEntity.ok(procesoService.listarProcesosPorUsuario(usuarioId, empresaId, estado));
+        } catch (BusinessRuleException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
 }

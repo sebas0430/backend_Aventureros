@@ -1,5 +1,6 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.config.JwtUtils;
 import com.edu.javeriana.backend.service.interfaces.IUsuarioService;
 import com.edu.javeriana.backend.service.interfaces.IEmpresaService;
 import com.edu.javeriana.backend.dto.UsuarioLoginDTO;
@@ -30,17 +31,20 @@ public class UsuarioService implements IUsuarioService {
     private final EmailService emailService;
     private final ModelMapper modelMapper;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtils jwtUtils;
 
     public UsuarioService(UsuarioRepository usuarioRepository,
                           @Lazy IEmpresaService empresaService,
                           EmailService emailService,
                           ModelMapper modelMapper,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          JwtUtils jwtUtils) {
         this.usuarioRepository = usuarioRepository;
         this.empresaService    = empresaService;
         this.emailService      = emailService;
         this.modelMapper       = modelMapper;
         this.passwordEncoder   = passwordEncoder;
+        this.jwtUtils          = jwtUtils;
     }
 
     @Override
@@ -94,10 +98,13 @@ public class UsuarioService implements IUsuarioService {
         throw new IllegalArgumentException("El usuario se encuentra inactivo");
         }   
 
-        // Si todo está bien, armamos su objeto de sesión.
+        // Si todo está bien, armamos su objeto de sesión con el token JWT.
+        String token = jwtUtils.generateToken(usuario.getId(), usuario.getUsername(), usuario.getRol());
+
         UsuarioLoginDTO response = modelMapper.map(usuario, UsuarioLoginDTO.class);
         response.setCorreo(usuario.getUsername());
         response.setEmpresaId(usuario.getEmpresa().getId());
+        response.setToken(token);
         
         log.info("Inicio de sesión exitoso para usuario: {}", correo);
         
@@ -206,5 +213,30 @@ public class UsuarioService implements IUsuarioService {
     public Usuario obtenerUsuarioEntity(Long id) {
         return usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UsuarioLoginDTO renovarToken(String tokenViejo) {
+        // Validamos que el token viejo sea legítimo (aunque esté por vencer).
+        if (!jwtUtils.validateToken(tokenViejo)) {
+            throw new IllegalArgumentException("Token inválido o expirado");
+        }
+
+        // Extraemos el correo del token y buscamos al usuario en la BD.
+        String correo = jwtUtils.getUsernameFromToken(tokenViejo);
+        Usuario usuario = usuarioRepository.findByUsername(correo)
+                .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
+
+        // Generamos un token nuevo con la misma info.
+        String tokenNuevo = jwtUtils.generateToken(usuario.getId(), usuario.getUsername(), usuario.getRol());
+
+        UsuarioLoginDTO response = modelMapper.map(usuario, UsuarioLoginDTO.class);
+        response.setCorreo(usuario.getUsername());
+        response.setEmpresaId(usuario.getEmpresa().getId());
+        response.setToken(tokenNuevo);
+
+        log.info("Token renovado exitosamente para usuario: {}", correo);
+        return response;
     }
 }
