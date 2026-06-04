@@ -34,19 +34,22 @@ public class RolPoolService implements IRolPoolService {
     private final IUsuarioService usuarioService;
     private final UsuarioRepository usuarioRepository;
     private final ModelMapper modelMapper;
+    private final RolPoolService self;
 
     public RolPoolService(RolPoolRepository rolPoolRepository,
                           AsignacionRolPoolRepository asignacionRolPoolRepository,
                           @Lazy IPoolService poolService,
                           @Lazy IUsuarioService usuarioService,
                           UsuarioRepository usuarioRepository,
-                          ModelMapper modelMapper) {
+                          ModelMapper modelMapper,
+                         @Lazy RolPoolService self) {
         this.rolPoolRepository           = rolPoolRepository;
         this.asignacionRolPoolRepository = asignacionRolPoolRepository;
         this.poolService                 = poolService;
         this.usuarioService              = usuarioService;
         this.usuarioRepository           = usuarioRepository;
         this.modelMapper                 = modelMapper;
+         this.self                        = self;
     }
 
     @Override
@@ -142,22 +145,20 @@ public class RolPoolService implements IRolPoolService {
         // Si no hay roles (Pool antiguo o error en creación), creamos los de por defecto
         if (roles.isEmpty()) {
             log.info("El Pool ID={} no tiene roles. Creando predeterminados...", poolId);
-            crearRolesPredeterminados(pool);
+            self.crearRolesPredeterminados(pool);
             roles = rolPoolRepository.findByPoolId(poolId);
         }
 
         return roles.stream()
                 .map(r -> {
                     String nombreEsperado = "Administrador " + pool.getNombre();
-                    if (r.isPermisoGestionarRoles() && !nombreEsperado.equals(r.getNombre())) {
-                        if ("Administrador".equals(r.getNombre()) || 
-                            "Administrador del Pool".equals(r.getNombre()) || 
-                            pool.getNombre().equals(r.getNombre())) {
-                            
-                            r.setNombre(nombreEsperado);
-                            rolPoolRepository.save(r);
-                        }
-                    }
+                    if (r.isPermisoGestionarRoles() && !nombreEsperado.equals(r.getNombre())
+        && ("Administrador".equals(r.getNombre())
+            || "Administrador del Pool".equals(r.getNombre())
+            || pool.getNombre().equals(r.getNombre()))) {
+    r.setNombre(nombreEsperado);
+    rolPoolRepository.save(r);
+}
                     RolPoolRegistroDTO dto = modelMapper.map(r, RolPoolRegistroDTO.class);
                     dto.setPoolId(r.getPool().getId());
                     return dto;

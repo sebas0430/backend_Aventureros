@@ -8,6 +8,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
@@ -67,5 +68,17 @@ class DocumentoControllerTest {
         ResponseEntity<Map<String, String>> response = documentoController.eliminarDocumento(1L);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         Mockito.verify(documentoService).eliminarDocumento(1L);
+    }
+
+    @Test
+    void descargarDocumento() {
+        Resource recurso = Mockito.mock(Resource.class);
+        Mockito.when(recurso.getFilename()).thenReturn("test.txt");
+        Mockito.when(documentoService.descargarDocumento(1L)).thenReturn(recurso);
+
+        ResponseEntity<Resource> response = documentoController.descargarDocumento(1L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(recurso, response.getBody());
     }
 }

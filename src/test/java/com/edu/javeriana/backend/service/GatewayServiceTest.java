@@ -140,4 +140,13 @@ class GatewayServiceTest {
         List<GatewayRegistroDTO> list = gatewayService.listarGatewaysPorProceso(1L);
         assertFalse(list.isEmpty());
     }
+
+    @Test
+    void eliminarGatewaysPorProceso_Exitoso() {
+        when(usuarioService.obtenerUsuarioEntity(1L)).thenReturn(adminUsuario);
+        when(procesoService.existeProceso(1L)).thenReturn(true);
+
+        gatewayService.eliminarGatewaysPorProceso(1L, 1L);
+        verify(gatewayRepository).deleteByProcesoId(1L);
+    }
 }

@@ -17,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
@@ -39,6 +40,9 @@ class EmpresaServiceTest {
 
     @Mock
     private ModelMapper modelMapper;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private EmpresaService empresaService;
@@ -64,6 +68,7 @@ class EmpresaServiceTest {
     void registrarEmpresa_Exitoso() {
         when(empresaRepository.findByNit(any())).thenReturn(Optional.empty());
         when(usuarioService.existeUsuarioPorUsername(any())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("hashedPass");
         when(empresaRepository.save(any(Empresa.class))).thenReturn(empresa);
         when(modelMapper.map(any(Empresa.class), eq(EmpresaRegistroDTO.class))).thenReturn(registroDTO);
 

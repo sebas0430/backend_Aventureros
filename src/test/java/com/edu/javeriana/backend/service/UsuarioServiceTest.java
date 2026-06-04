@@ -1,5 +1,6 @@
 package com.edu.javeriana.backend.service;
 
+import com.edu.javeriana.backend.config.JwtUtils;
 import com.edu.javeriana.backend.dto.UsuarioLoginDTO;
 import com.edu.javeriana.backend.dto.UsuarioRegistroDTO;
 import com.edu.javeriana.backend.model.Empresa;
@@ -20,6 +21,9 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,6 +43,9 @@ class UsuarioServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private JwtUtils jwtUtils;
 
     @InjectMocks
     private UsuarioService usuarioService;
@@ -90,7 +97,8 @@ class UsuarioServiceTest {
     void iniciarSesion_Exitoso() {
         when(usuarioRepository.findByUsername("test@test.com")).thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
-        
+        when(jwtUtils.generateToken(anyLong(), anyString(), anyString())).thenReturn("token.jwt.generado");
+
         UsuarioLoginDTO loginDto = new UsuarioLoginDTO();
         loginDto.setCorreo("test@test.com");
         loginDto.setEmpresaId(1L);
@@ -153,8 +161,75 @@ class UsuarioServiceTest {
 
     @Test
     void eliminarUsuario() {
+        Usuario otroAdmin = new Usuario();
+        otroAdmin.setId(99L);
+        otroAdmin.setRol("ADMINISTRADOR_EMPRESA");
+        otroAdmin.setEmpresa(empresa);
+
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.findByEmpresaIdAndRol(1L, "ADMINISTRADOR_EMPRESA"))
+                .thenReturn(List.of(otroAdmin));
+        when(usuarioRepository.save(any())).thenReturn(otroAdmin);
+
         usuarioService.eliminarUsuario(1L);
         verify(usuarioRepository).delete(usuario);
+    }
+
+    @Test
+    void renovarToken_Exitoso() {
+        when(jwtUtils.validateToken("token.viejo")).thenReturn(true);
+        when(jwtUtils.getUsernameFromToken("token.viejo")).thenReturn("test@test.com");
+        when(usuarioRepository.findByUsername("test@test.com")).thenReturn(Optional.of(usuario));
+        when(jwtUtils.generateToken(anyLong(), anyString(), anyString())).thenReturn("token.nuevo");
+
+        UsuarioLoginDTO loginDto = new UsuarioLoginDTO();
+        loginDto.setCorreo("test@test.com");
+        loginDto.setEmpresaId(1L);
+        when(modelMapper.map(any(), eq(UsuarioLoginDTO.class))).thenReturn(loginDto);
+
+        UsuarioLoginDTO res = usuarioService.renovarToken("token.viejo");
+
+        assertNotNull(res);
+        verify(jwtUtils).generateToken(anyLong(), anyString(), anyString());
+    }
+
+    @Test
+    void renovarToken_TokenInvalido_LanzaExcepcion() {
+        when(jwtUtils.validateToken("token.expirado")).thenReturn(false);
+        assertThrows(IllegalArgumentException.class, () -> usuarioService.renovarToken("token.expirado"));
+    }
+
+    @Test
+    void existeUsuarioPorUsername_UsuarioExiste_RetornaTrue() {
+        when(usuarioRepository.findByUsername("test@test.com")).thenReturn(Optional.of(usuario));
+        assertTrue(usuarioService.existeUsuarioPorUsername("test@test.com"));
+    }
+
+    @Test
+    void existeUsuarioPorUsername_NoExiste_RetornaFalse() {
+        when(usuarioRepository.findByUsername("noexiste@test.com")).thenReturn(Optional.empty());
+        assertFalse(usuarioService.existeUsuarioPorUsername("noexiste@test.com"));
+    }
+
+    @Test
+    void guardarUsuarioEntity_GuardaCorrectamente() {
+        when(usuarioRepository.save(any())).thenReturn(usuario);
+        Usuario res = usuarioService.guardarUsuarioEntity(usuario);
+        assertNotNull(res);
+        verify(usuarioRepository).save(usuario);
+    }
+
+    @Test
+    void obtenerUsuarioEntity_Exitoso() {
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        Usuario res = usuarioService.obtenerUsuarioEntity(1L);
+        assertNotNull(res);
+        assertEquals(1L, res.getId());
+    }
+
+    @Test
+    void obtenerUsuarioEntity_NoEncontrado_LanzaExcepcion() {
+        when(usuarioRepository.findById(99L)).thenReturn(Optional.empty());
+        assertThrows(Exception.class, () -> usuarioService.obtenerUsuarioEntity(99L));
     }
 }

@@ -38,6 +38,7 @@ public class DocumentoService implements IDocumentoService {
 
     // Directorio donde se guardarán los archivos localmente (simulado local file system)
     private static final String UPLOAD_DIR = "uploads/";
+    private static final String DOCUMENTO_NO_ENCONTRADO = "Documento no encontrado";
 
     public DocumentoService(DocumentoRepository documentoRepository,
                             @Lazy IProcesoService procesoService,
@@ -116,7 +117,7 @@ public class DocumentoService implements IDocumentoService {
     @Transactional
     public void eliminarDocumento(Long documentoId) {
         Documento documento = documentoRepository.findById(documentoId)
-                .orElseThrow(() -> new ResourceNotFoundException("Documento no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(DOCUMENTO_NO_ENCONTRADO));
 
         try {
             Path filePath = Paths.get(documento.getRutaArchivo());
@@ -133,7 +134,7 @@ public class DocumentoService implements IDocumentoService {
 @Transactional
 public DocumentoDTO actualizarDocumento(Long documentoId, MultipartFile archivo) {
     Documento documento = documentoRepository.findById(documentoId)
-            .orElseThrow(() -> new ResourceNotFoundException("Documento no encontrado"));
+            .orElseThrow(() -> new ResourceNotFoundException(DOCUMENTO_NO_ENCONTRADO));
 
     if (archivo.isEmpty()) {
         throw new IllegalArgumentException("El archivo está vacío");
@@ -179,7 +180,7 @@ public DocumentoDTO actualizarDocumento(Long documentoId, MultipartFile archivo)
     @Transactional(readOnly = true)
     public Resource descargarDocumento(Long documentoId) {
         Documento documento = documentoRepository.findById(documentoId)
-                .orElseThrow(() -> new ResourceNotFoundException("Documento no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(DOCUMENTO_NO_ENCONTRADO));
 
         try {
             Path filePath = Paths.get(documento.getRutaArchivo()).normalize();

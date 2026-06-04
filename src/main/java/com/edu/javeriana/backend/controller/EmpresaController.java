@@ -48,7 +48,7 @@ public class EmpresaController {
         return ResponseEntity.ok(empresaService.listarEmpresas());
     }
 
-    // Borra una empresa (cuidado, que se va todo lo de esa empresa).
+    // Borra una empresa 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, String>> eliminarEmpresa(@PathVariable Long id) {
         empresaService.eliminarEmpresa(id);

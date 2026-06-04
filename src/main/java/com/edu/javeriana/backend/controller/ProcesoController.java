@@ -25,7 +25,7 @@ public class ProcesoController {
 
     // Crea un proceso vacío para empezar a trabajar en él.
     @PostMapping
-    public ResponseEntity<?> crearProceso(@Valid @RequestBody ProcesoRegistroDTO dto) {
+    public ResponseEntity<Object> crearProceso(@Valid @RequestBody ProcesoRegistroDTO dto) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(procesoService.crearProceso(dto));
         } catch (BusinessRuleException | IllegalArgumentException e) {
@@ -67,9 +67,9 @@ public class ProcesoController {
         return ResponseEntity.ok(procesoService.listarPorAutor(autorId));
     }
 
-    //Este guarda el JSON que define todo el dibujo del proceso.
+    //Este guarda el JSON que define el dibujo del proceso.
     @PatchMapping("/{id}/definicion")
-    public ResponseEntity<?> actualizarDefinicion(
+    public ResponseEntity<Object> actualizarDefinicion(
             @PathVariable Long id,
             @RequestBody Map<String, String> body) {
         try {
@@ -181,7 +181,7 @@ public class ProcesoController {
      * GET /api/procesos/mis-procesos?usuarioId=1&empresaId=1&estado=BORRADOR
      */
     @GetMapping("/mis-procesos")
-    public ResponseEntity<?> listarProcesosPorUsuario(
+    public ResponseEntity<Object> listarProcesosPorUsuario(
             @RequestParam Long usuarioId,
             @RequestParam Long empresaId,
             @RequestParam(required = false) String estado) {

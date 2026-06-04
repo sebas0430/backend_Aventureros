@@ -163,4 +163,11 @@ class NotificacionExternaServiceTest {
         List<NotificacionExternaDTO> list = notificacionExternaService.listarLogsPorProceso(1L);
         assertTrue(list.isEmpty());
     }
+
+    @Test
+    void listarLogsPorConector() {
+        when(notificacionExternaRepository.findByConectorId(1L)).thenReturn(Collections.emptyList());
+        List<NotificacionExternaDTO> list = notificacionExternaService.listarLogsPorConector(1L);
+        assertTrue(list.isEmpty());
+    }
 }

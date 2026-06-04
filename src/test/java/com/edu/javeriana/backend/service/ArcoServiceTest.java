@@ -147,6 +147,25 @@ class ArcoServiceTest {
     }
 
     @Test
+    void obtenerArcoPorId_Exitoso() {
+        ArcoRegistroDTO dto = new ArcoRegistroDTO();
+        when(arcoRepository.findById(1L)).thenReturn(Optional.of(arco));
+        when(modelMapper.map(any(), eq(ArcoRegistroDTO.class))).thenReturn(dto);
+
+        ArcoRegistroDTO res = arcoService.obtenerArcoPorId(1L);
+        assertNotNull(res);
+    }
+
+    @Test
+    void eliminarArcosPorProceso_Exitoso() {
+        when(usuarioService.obtenerUsuarioEntity(1L)).thenReturn(adminUsuario);
+        when(procesoService.existeProceso(1L)).thenReturn(true);
+
+        arcoService.eliminarArcosPorProceso(1L, 1L);
+        verify(arcoRepository).deleteByProcesoId(1L);
+    }
+
+    @Test
     void eliminarArcosPorNodo() {
         when(arcoRepository.findByProcesoIdAndOrigenIdAndOrigenTipo(1L, 1L, TipoNodo.ACTIVIDAD)).thenReturn(List.of(arco));
         when(arcoRepository.findByProcesoIdAndDestinoIdAndDestinoTipo(1L, 1L, TipoNodo.ACTIVIDAD)).thenReturn(Collections.emptyList());

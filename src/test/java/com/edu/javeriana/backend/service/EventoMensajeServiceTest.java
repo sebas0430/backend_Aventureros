@@ -142,4 +142,11 @@ class EventoMensajeServiceTest {
         List<MensajeEjecucionDTO> list = eventoMensajeService.listarHistorialPorEventoOrigen(1L);
         assertTrue(list.isEmpty());
     }
+
+    @Test
+    void listarPorProceso_Exitoso() {
+        when(eventoMensajeRepository.findByProcesoId(1L)).thenReturn(Collections.emptyList());
+        List<EventoMensajeRegistroDTO> list = eventoMensajeService.listarPorProceso(1L);
+        assertTrue(list.isEmpty());
+    }
 }

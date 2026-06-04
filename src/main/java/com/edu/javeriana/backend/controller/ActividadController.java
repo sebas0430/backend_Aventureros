@@ -21,7 +21,7 @@ public class ActividadController {
 
     private final IActividadService actividadService;
 
-    // Crea una tarea o paso nuevo (se asegura de que todo esté en orden antes de guardar).
+    // Crea una tarea o paso nuevo 
     @PostMapping
     public ResponseEntity<ActividadRegistroDTO> crearActividad(
             @Valid @RequestBody ActividadRegistroDTO dto) {

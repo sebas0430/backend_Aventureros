@@ -2,6 +2,8 @@ package com.edu.javeriana.backend.controller;
 
 import com.edu.javeriana.backend.dto.PoolEdicionDTO;
 import com.edu.javeriana.backend.dto.PoolRegistroDTO;
+import com.edu.javeriana.backend.exception.BusinessRuleException;
+import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.service.interfaces.IPoolService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -62,5 +64,54 @@ class PoolControllerTest {
         Mockito.when(poolService.listarPoolsPorEmpresa(1L)).thenReturn(Collections.emptyList());
         ResponseEntity<List<PoolRegistroDTO>> response = poolController.listarPoolsPorEmpresa(1L);
         assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void crearPool_BusinessRuleException_retorna400() {
+        Mockito.when(poolService.crearPool(any())).thenThrow(new BusinessRuleException("error"));
+        ResponseEntity<PoolRegistroDTO> response = poolController.crearPool(new PoolRegistroDTO());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    void crearPool_NotFound_retorna404() {
+        Mockito.when(poolService.crearPool(any())).thenThrow(new ResourceNotFoundException("no existe"));
+        ResponseEntity<PoolRegistroDTO> response = poolController.crearPool(new PoolRegistroDTO());
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void editarPool_BusinessRuleException_retorna400() {
+        Mockito.when(poolService.editarPool(anyLong(), any())).thenThrow(new BusinessRuleException("error"));
+        ResponseEntity<PoolEdicionDTO> response = poolController.editarPool(1L, new PoolEdicionDTO());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    void editarPool_NotFound_retorna404() {
+        Mockito.when(poolService.editarPool(anyLong(), any())).thenThrow(new ResourceNotFoundException("no existe"));
+        ResponseEntity<PoolEdicionDTO> response = poolController.editarPool(1L, new PoolEdicionDTO());
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void eliminarPool_BusinessRuleException_retorna400() {
+        Mockito.doThrow(new BusinessRuleException("error")).when(poolService).eliminarPool(1L, 1L);
+        ResponseEntity<Void> response = poolController.eliminarPool(1L, 1L);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    void eliminarPool_NotFound_retorna404() {
+        Mockito.doThrow(new ResourceNotFoundException("no existe")).when(poolService).eliminarPool(1L, 1L);
+        ResponseEntity<Void> response = poolController.eliminarPool(1L, 1L);
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void listarPools_NotFound_retorna404() {
+        Mockito.when(poolService.listarPoolsPorEmpresa(1L)).thenThrow(new ResourceNotFoundException("no existe"));
+        ResponseEntity<List<PoolRegistroDTO>> response = poolController.listarPoolsPorEmpresa(1L);
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
 }

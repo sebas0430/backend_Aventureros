@@ -63,7 +63,7 @@ public class GatewayService implements IGatewayService {
                 .proceso(proceso)
                 .build();
 
-        // Guardamos y avisamos que todo salió bien.
+        // Guardamos y avisamos que salió bien.
         Gateway guardado = gatewayRepository.save(gateway);
 
         // Mapeamos a DTO para devolver la info al frente.

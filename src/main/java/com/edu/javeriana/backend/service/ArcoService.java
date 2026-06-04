@@ -79,7 +79,7 @@ public class ArcoService implements IArcoService {
                 .etiqueta(dto.getEtiqueta())
                 .build();
 
-        // Guardamos todo y avisamos por consola.
+        // Guardamos y avisamos por consola.
         Arco guardado = arcoRepository.save(arco);
         
         log.info("Arco {} creado exitosamente en proceso {}", guardado.getId(), proceso.getId());

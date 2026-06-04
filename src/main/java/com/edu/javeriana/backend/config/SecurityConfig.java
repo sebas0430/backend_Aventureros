@@ -26,16 +26,16 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception { // NOSONAR
         http
             .cors(cors -> {}) // Habilita el CorsFilter bean definido en CorsConfig
-            .csrf(AbstractHttpConfigurer::disable)
+            .csrf(AbstractHttpConfigurer::disable) // NOSONAR - API REST stateless con JWT, CSRF no aplica
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // Endpoints públicos (no requieren token)
                 .requestMatchers("/api/usuarios/login", "/api/usuarios/refresh", "/api/usuarios/invitar").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/empresas").permitAll()
-                // Todo lo demás requiere autenticación con JWT
+                // El resto de endpoints requiere autenticación con JWT
                 .anyRequest().authenticated()
             )
             // Registrar nuestro filtro JWT ANTES del filtro de autenticación por defecto

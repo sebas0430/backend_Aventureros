@@ -74,7 +74,7 @@ public class UsuarioService implements IUsuarioService {
 
         log.info("Usuario invitado exitosamente: {} con rol {} para la empresa {}", correo, rol, empresa.getNombre());
 
-        // Devolvemos los datos básicos para que el frente sepa que todo salió bien.
+        // Devolvemos los datos básicos para que el frente sepa que salió bien.
         UsuarioRegistroDTO response = modelMapper.map(guardado, UsuarioRegistroDTO.class);
         response.setCorreo(guardado.getUsername());
         response.setEmpresaId(guardado.getEmpresa().getId());
@@ -98,7 +98,7 @@ public class UsuarioService implements IUsuarioService {
         throw new IllegalArgumentException("El usuario se encuentra inactivo");
         }   
 
-        // Si todo está bien, armamos su objeto de sesión con el token JWT.
+        // Si está bien, armamos su objeto de sesión con el token JWT.
         String token = jwtUtils.generateToken(usuario.getId(), usuario.getUsername(), usuario.getRol());
 
         UsuarioLoginDTO response = modelMapper.map(usuario, UsuarioLoginDTO.class);
@@ -218,7 +218,6 @@ public class UsuarioService implements IUsuarioService {
     @Override
     @Transactional(readOnly = true)
     public UsuarioLoginDTO renovarToken(String tokenViejo) {
-        // Validamos que el token viejo sea legítimo (aunque esté por vencer).
         if (!jwtUtils.validateToken(tokenViejo)) {
             throw new IllegalArgumentException("Token inválido o expirado");
         }

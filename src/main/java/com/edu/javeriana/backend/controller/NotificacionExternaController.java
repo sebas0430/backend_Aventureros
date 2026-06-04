@@ -71,7 +71,7 @@ public class NotificacionExternaController {
         return ResponseEntity.ok(notificacionExternaService.listarLogsPorProceso(procesoId));
     }
 
-    // Ver el historial de todo lo que ha pasado por un conector específico.
+    // Ver el historial de lo que ha pasado por un conector específico.
     @GetMapping("/logs/conector/{conectorId}")
     public ResponseEntity<List<NotificacionExternaDTO>> logsPorConector(@PathVariable Long conectorId) {
         return ResponseEntity.ok(notificacionExternaService.listarLogsPorConector(conectorId));

@@ -2,6 +2,8 @@ package com.edu.javeriana.backend.controller;
 
 import com.edu.javeriana.backend.dto.LaneEdicionDTO;
 import com.edu.javeriana.backend.dto.LaneRegistroDTO;
+import com.edu.javeriana.backend.exception.BusinessRuleException;
+import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.service.interfaces.ILaneService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -62,5 +64,61 @@ class LaneControllerTest {
         Mockito.when(laneService.listarLanesPorPool(1L, 2L)).thenReturn(Collections.emptyList());
         ResponseEntity<List<LaneRegistroDTO>> response = laneController.listarLanesPorPool(1L, 2L);
         assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void crearLane_BusinessRuleException_retorna400() {
+        Mockito.when(laneService.crearLane(any())).thenThrow(new BusinessRuleException("error"));
+        ResponseEntity<LaneRegistroDTO> response = laneController.crearLane(new LaneRegistroDTO());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    void crearLane_NotFound_retorna404() {
+        Mockito.when(laneService.crearLane(any())).thenThrow(new ResourceNotFoundException("no existe"));
+        ResponseEntity<LaneRegistroDTO> response = laneController.crearLane(new LaneRegistroDTO());
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void editarLane_BusinessRuleException_retorna400() {
+        Mockito.when(laneService.editarLane(anyLong(), any())).thenThrow(new BusinessRuleException("error"));
+        ResponseEntity<LaneEdicionDTO> response = laneController.editarLane(1L, new LaneEdicionDTO());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    void editarLane_NotFound_retorna404() {
+        Mockito.when(laneService.editarLane(anyLong(), any())).thenThrow(new ResourceNotFoundException("no existe"));
+        ResponseEntity<LaneEdicionDTO> response = laneController.editarLane(1L, new LaneEdicionDTO());
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void eliminarLane_BusinessRuleException_retorna400() {
+        Mockito.doThrow(new BusinessRuleException("error")).when(laneService).eliminarLane(1L, 1L);
+        ResponseEntity<Void> response = laneController.eliminarLane(1L, 1L);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    void eliminarLane_NotFound_retorna404() {
+        Mockito.doThrow(new ResourceNotFoundException("no existe")).when(laneService).eliminarLane(1L, 1L);
+        ResponseEntity<Void> response = laneController.eliminarLane(1L, 1L);
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void listarLanes_BusinessRuleException_retorna400() {
+        Mockito.when(laneService.listarLanesPorPool(1L, 2L)).thenThrow(new BusinessRuleException("error"));
+        ResponseEntity<List<LaneRegistroDTO>> response = laneController.listarLanesPorPool(1L, 2L);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    void listarLanes_NotFound_retorna404() {
+        Mockito.when(laneService.listarLanesPorPool(1L, 2L)).thenThrow(new ResourceNotFoundException("no existe"));
+        ResponseEntity<List<LaneRegistroDTO>> response = laneController.listarLanesPorPool(1L, 2L);
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
 }

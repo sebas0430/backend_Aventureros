@@ -112,7 +112,7 @@ public class ProcesoService implements IProcesoService {
         // Checamos si el autor tiene permiso de 'CREAR' en ese pool.
         validarPermisoDeRol(autor.getId(), poolAsignado.getId(), "CREAR");
 
-        // Por defecto, todo proceso nuevo empieza como BORRADOR.
+        // Por defecto, proceso nuevo empieza como BORRADOR.
         proceso.setEstado(EstadoProceso.BORRADOR);
 
         // Guardamos y devolvemos los datos listos para el mapa.
@@ -257,7 +257,7 @@ public class ProcesoService implements IProcesoService {
         validarPermisoDeRol(usuarioId, proceso.getPool().getId(),
                 nuevoEstado == EstadoProceso.PUBLICADO ? "PUBLICAR" : EDITAR);
 
-        Usuario usuario = usuarioRepository.findById(usuarioId)
+        usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException(USUARIO_NOT_FOUND));
 
         proceso.setEstado(nuevoEstado);
@@ -397,7 +397,7 @@ public class ProcesoService implements IProcesoService {
             catch (IllegalArgumentException e) { throw new IllegalArgumentException("Estado no válido"); }
         }
 
-        // Admin global: ve todo sin restricción de pool
+        // Admin global: ve sin restricción de pool
         if (ADMINISTRADOR_EMPRESA.equals(usuario.getRol())) {
             return procesoRepository.buscarConFiltros(empresaId, estado, null)
                     .stream().map(this::toRegistroDTO).toList();

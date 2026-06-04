@@ -1,7 +1,7 @@
 package com.edu.javeriana.backend.service;
 
 import com.edu.javeriana.backend.dto.DocumentoDTO;
-
+import com.edu.javeriana.backend.exception.FileOperationException;
 import com.edu.javeriana.backend.model.Documento;
 import com.edu.javeriana.backend.model.Proceso;
 import com.edu.javeriana.backend.repository.DocumentoRepository;
@@ -14,8 +14,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.mock.web.MockMultipartFile;
-
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -54,7 +52,7 @@ class DocumentoServiceTest {
     }
 
     @Test
-    void subirDocumento_Exitoso() throws IOException {
+    void subirDocumento_Exitoso() {
         MockMultipartFile file = new MockMultipartFile("archivo", "test.txt", "text/plain", "content".getBytes());
         when(procesoService.obtenerProcesoEntity(1L)).thenReturn(proceso);
         when(documentoRepository.save(any(Documento.class))).thenReturn(documento);
@@ -94,5 +92,18 @@ class DocumentoServiceTest {
 
         DocumentoDTO res = documentoService.actualizarDocumento(1L, file);
         assertNotNull(res);
+    }
+
+    @Test
+    void descargarDocumento_NoEncontrado_LanzaExcepcion() {
+        when(documentoRepository.findById(99L)).thenReturn(Optional.empty());
+        assertThrows(Exception.class, () -> documentoService.descargarDocumento(99L));
+    }
+
+    @Test
+    void descargarDocumento_ArchivoNoExiste_LanzaFileOperationException() {
+        documento.setRutaArchivo("uploads/archivo_que_no_existe_12345.txt");
+        when(documentoRepository.findById(1L)).thenReturn(Optional.of(documento));
+        assertThrows(FileOperationException.class, () -> documentoService.descargarDocumento(1L));
     }
 }

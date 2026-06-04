@@ -1,6 +1,8 @@
 package com.edu.javeriana.backend.controller;
 
 import com.edu.javeriana.backend.dto.MensajeCatchDTO;
+import com.edu.javeriana.backend.exception.BusinessRuleException;
+import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.service.interfaces.IMessageCatchService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,5 +51,33 @@ class MessageCatchControllerTest {
         Mockito.when(messageCatchService.listarRecepcionesPorCatch(anyLong())).thenReturn(Collections.emptyList());
         ResponseEntity<List<MensajeCatchDTO>> response = messageCatchController.logsPorCatch(1L);
         assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void recibirMensaje_BusinessRuleException_retorna400() {
+        Mockito.when(messageCatchService.recibirMensaje(any())).thenThrow(new BusinessRuleException("error"));
+        ResponseEntity<List<MensajeCatchDTO>> response = messageCatchController.recibirMensaje(new MensajeCatchDTO());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    void recibirMensaje_NotFound_retorna404() {
+        Mockito.when(messageCatchService.recibirMensaje(any())).thenThrow(new ResourceNotFoundException("no existe"));
+        ResponseEntity<List<MensajeCatchDTO>> response = messageCatchController.recibirMensaje(new MensajeCatchDTO());
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void logsPorProceso_NotFound_retorna404() {
+        Mockito.when(messageCatchService.listarRecepcionesPorProceso(anyLong())).thenThrow(new ResourceNotFoundException("no existe"));
+        ResponseEntity<List<MensajeCatchDTO>> response = messageCatchController.logsPorProceso(1L);
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void logsPorCatch_NotFound_retorna404() {
+        Mockito.when(messageCatchService.listarRecepcionesPorCatch(anyLong())).thenThrow(new ResourceNotFoundException("no existe"));
+        ResponseEntity<List<MensajeCatchDTO>> response = messageCatchController.logsPorCatch(1L);
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
 }

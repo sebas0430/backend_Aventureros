@@ -5,6 +5,7 @@ import com.edu.javeriana.backend.dto.RolProcesoEdicionDTO;
 import com.edu.javeriana.backend.dto.RolProcesoRegistroDTO;
 import com.edu.javeriana.backend.exception.BusinessRuleException;
 
+import com.edu.javeriana.backend.exception.ResourceNotFoundException;
 import com.edu.javeriana.backend.model.Empresa;
 import com.edu.javeriana.backend.model.RolProceso;
 import com.edu.javeriana.backend.model.Usuario;
@@ -139,5 +140,49 @@ class RolProcesoServiceTest {
         RolProcesoDetalleDTO res = rolProcesoService.consultarRolProcesoDetalle(1L);
         assertNotNull(res);
         assertTrue(res.getUsoEnProcesos().isEmpty());
+    }
+
+    @Test
+    void obtenerRolProcesoPorId_Exitoso() {
+        RolProcesoRegistroDTO dto = new RolProcesoRegistroDTO();
+        dto.setEmpresaId(1L);
+
+        when(rolProcesoRepository.findById(1L)).thenReturn(Optional.of(rol));
+        when(modelMapper.map(any(), eq(RolProcesoRegistroDTO.class))).thenReturn(dto);
+
+        RolProcesoRegistroDTO res = rolProcesoService.obtenerRolProcesoPorId(1L);
+        assertNotNull(res);
+        assertEquals(1L, res.getEmpresaId());
+    }
+
+    @Test
+    void obtenerRolProcesoPorId_NoEncontrado_LanzaExcepcion() {
+        when(rolProcesoRepository.findById(99L)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> rolProcesoService.obtenerRolProcesoPorId(99L));
+    }
+
+    @Test
+    void consultarRolesConDetalle_Exitoso() {
+        when(empresaService.obtenerEmpresaEntity(1L)).thenReturn(empresa);
+        when(usuarioService.obtenerUsuarioEntity(1L)).thenReturn(adminUsuario);
+        when(rolProcesoRepository.findByEmpresaId(1L)).thenReturn(List.of(rol));
+        when(actividadService.obtenerActividadesPorRolProceso(1L)).thenReturn(Collections.emptyList());
+
+        List<RolProcesoDetalleDTO> list = rolProcesoService.consultarRolesConDetalle(1L, 1L);
+        assertFalse(list.isEmpty());
+    }
+
+    @Test
+    void consultarRolesConDetalle_EmpresaDiferente_LanzaExcepcion() {
+        Empresa otraEmpresa = new Empresa();
+        otraEmpresa.setId(2L);
+        Usuario usuarioOtraEmpresa = new Usuario();
+        usuarioOtraEmpresa.setId(2L);
+        usuarioOtraEmpresa.setEmpresa(otraEmpresa);
+
+        when(empresaService.obtenerEmpresaEntity(1L)).thenReturn(empresa);
+        when(usuarioService.obtenerUsuarioEntity(2L)).thenReturn(usuarioOtraEmpresa);
+
+        assertThrows(BusinessRuleException.class, () -> rolProcesoService.consultarRolesConDetalle(1L, 2L));
     }
 }

@@ -10,6 +10,7 @@ import com.edu.javeriana.backend.model.RolPool;
 import com.edu.javeriana.backend.model.Usuario;
 import com.edu.javeriana.backend.repository.AsignacionRolPoolRepository;
 import com.edu.javeriana.backend.repository.RolPoolRepository;
+import com.edu.javeriana.backend.repository.UsuarioRepository;
 import com.edu.javeriana.backend.service.interfaces.IPoolService;
 import com.edu.javeriana.backend.service.interfaces.IUsuarioService;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +26,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,6 +40,8 @@ class RolPoolServiceTest {
     private IPoolService poolService;
     @Mock
     private IUsuarioService usuarioService;
+    @Mock
+    private UsuarioRepository usuarioRepository;
     @Mock
     private ModelMapper modelMapper;
 
@@ -123,6 +127,7 @@ class RolPoolServiceTest {
 
         Usuario destino = new Usuario();
         destino.setId(2L);
+        destino.setRol("EDITOR");
         destino.setEmpresa(empresa);
 
         when(poolService.obtenerPoolEntity(1L)).thenReturn(pool);
@@ -130,12 +135,13 @@ class RolPoolServiceTest {
         when(usuarioService.obtenerUsuarioEntity(2L)).thenReturn(destino);
         when(rolPoolRepository.findById(1L)).thenReturn(Optional.of(rol));
         when(asignacionRolPoolRepository.findByUsuarioIdAndPoolId(2L, 1L)).thenReturn(Optional.empty());
-        
+
         AsignacionRolPool asignacion = new AsignacionRolPool();
         asignacion.setUsuario(destino);
         asignacion.setRol(rol);
         asignacion.setPool(pool);
         when(asignacionRolPoolRepository.save(any())).thenReturn(asignacion);
+        when(usuarioRepository.save(any())).thenReturn(destino);
 
         AsignacionRolDTO res = rolPoolService.asignarRolAUsuario(dto);
         assertNotNull(res);
@@ -144,9 +150,19 @@ class RolPoolServiceTest {
 
     @Test
     void desasignarRol_Exitoso() {
+        Usuario destino = new Usuario();
+        destino.setId(2L);
+        destino.setRol("EDITOR");
+
+        AsignacionRolPool asignacion = new AsignacionRolPool();
+        asignacion.setUsuario(destino);
+        asignacion.setRol(rol);
+        asignacion.setPool(pool);
+
         when(poolService.obtenerPoolEntity(1L)).thenReturn(pool);
         when(usuarioService.obtenerUsuarioEntity(1L)).thenReturn(adminUsuario);
-        when(asignacionRolPoolRepository.findByUsuarioIdAndPoolId(2L, 1L)).thenReturn(Optional.of(new AsignacionRolPool()));
+        when(asignacionRolPoolRepository.findByUsuarioIdAndPoolId(2L, 1L)).thenReturn(Optional.of(asignacion));
+        when(usuarioRepository.save(any())).thenReturn(destino);
 
         rolPoolService.desasignarRolAUsuario(2L, 1L, 1L);
         verify(asignacionRolPoolRepository).delete(any());
@@ -161,5 +177,38 @@ class RolPoolServiceTest {
 
         List<RolPoolRegistroDTO> list = rolPoolService.listarRolesPorPool(1L, 1L);
         assertFalse(list.isEmpty());
+    }
+
+    @Test
+    void obtenerAsignacionUsuario_Exitoso() {
+        AsignacionRolPool asignacion = new AsignacionRolPool();
+        asignacion.setUsuario(adminUsuario);
+        asignacion.setRol(rol);
+        asignacion.setPool(pool);
+
+        when(asignacionRolPoolRepository.findByUsuarioIdAndPoolId(1L, 1L)).thenReturn(Optional.of(asignacion));
+
+        AsignacionRolDTO res = rolPoolService.obtenerAsignacionUsuario(1L, 1L);
+
+        assertNotNull(res);
+        assertEquals(1L, res.getUsuarioDestinoId());
+        assertEquals(1L, res.getRolPoolId());
+    }
+
+    @Test
+    void obtenerAsignacionUsuario_NoExiste_RetornaNull() {
+        when(asignacionRolPoolRepository.findByUsuarioIdAndPoolId(99L, 1L)).thenReturn(Optional.empty());
+
+        AsignacionRolDTO res = rolPoolService.obtenerAsignacionUsuario(99L, 1L);
+        assertNull(res);
+    }
+
+    @Test
+    void crearRolesPredeterminados_CreaLosTreeRoles() {
+        rolPoolService.crearRolesPredeterminados(pool);
+        verify(rolPoolRepository).saveAll(argThat(list -> {
+            List<?> roles = (List<?>) list;
+            return roles.size() == 3;
+        }));
     }
 }
